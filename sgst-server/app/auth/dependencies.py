@@ -1,9 +1,6 @@
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer
+from fastapi import HTTPException, Request
 from app.auth.jwt_handler import decodificar_token
 import jwt
-
-auth_scheme = HTTPBearer()
 
 def verify_token(request: Request):
     access_token = request.cookies.get("access_token")
