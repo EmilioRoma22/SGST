@@ -140,7 +140,7 @@ export async function seleccionarLicencia(id_empresa: number, id_licencia: numbe
 
 export async function obtenerTalleres(id_empresa: number): Promise<Talleres[]> {
     try {
-        const respuesta = await apiAxios(`talleres/obtener_talleres?id_empresa=${id_empresa}`)
+        const respuesta = await apiAxios.get(`talleres/obtener_talleres?id_empresa=${id_empresa}`)
 
         return respuesta.data.talleres
     } catch (error: any) {
