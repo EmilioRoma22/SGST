@@ -24,9 +24,7 @@ export const Suscripciones = () => {
                 navigate("/")
                 return
             }
-
-            console.log(usuario)
-
+            
             if (usuario.id_empresa === 0) {
                 navigate("/crear_empresa");
                 return;

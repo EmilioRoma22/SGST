@@ -161,7 +161,13 @@ def login_user(info_usuario: LoginUsuario):
         
         access_token = crear_token(usuario, minutos=10)
         _refresh_token = secrets.token_urlsafe(64)
-
+        
+        expira_en = datetime.now() + timedelta(days=1)
+        
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("INSERT INTO refresh_tokens (id_usuario, token, expira_en, valido) VALUES (%s, %s, %s, %s)", (usuario['id_usuario'], _refresh_token, expira_en, 1))
+            connection.commit()
+        
         content = {
             "message": "Inicio de sesión exitoso",
             "usuario": {
