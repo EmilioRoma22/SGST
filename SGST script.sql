@@ -142,7 +142,6 @@ CREATE TABLE clientes (
   telefono_cliente VARCHAR(20),
   direccion_cliente VARCHAR(255),
   notas_cliente TEXT,
-  activo TINYINT DEFAULT 1,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   ultima_actualizacion TIMESTAMP NULL,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,

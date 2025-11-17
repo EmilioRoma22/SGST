@@ -15,7 +15,7 @@ def obtener_clientes(id_taller: int, usuario=Depends(verify_token)):
         connection = get_connection()
         cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM clientes WHERE id_taller = %s AND activo = 1", (id_taller, ))
+        cursor.execute("SELECT * FROM clientes WHERE id_taller = %s", (id_taller, ))
         clientes = cursor.fetchall()
         
         return {"clientes": clientes}
@@ -34,10 +34,10 @@ def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token))
                 
         cursor.execute("""
             SELECT 'correo' as tipo FROM clientes 
-            WHERE correo_cliente = %s AND id_taller = %s AND activo = 1
+            WHERE correo_cliente = %s AND id_taller = %s
             UNION
             SELECT 'telefono' as tipo FROM clientes 
-            WHERE telefono_cliente = %s AND id_taller = %s AND activo = 1
+            WHERE telefono_cliente = %s AND id_taller = %s
         """, (data_cliente.correo_cliente, data_cliente.id_taller, 
             data_cliente.telefono_cliente, data_cliente.id_taller))
 
@@ -157,7 +157,6 @@ def eliminar_cliente(id_cliente: int, usuario=Depends(verify_token)):
         connection = get_connection()
         cursor = connection.cursor(dictionary=True)
         
-        #cursor.execute("UPDATE clientes SET activo = 0 WHERE id_cliente = %s", (id_cliente, ))
         cursor.execute("DELETE FROM clientes WHERE id_cliente = %s", (id_cliente, ))
         
         if cursor.rowcount == 0:
