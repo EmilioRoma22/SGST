@@ -1,5 +1,29 @@
 import apiAxios from "./apiAxios";
-import type { DatosCrearEmpresa, DatosCrearTaller, DatosUsuarioRegistro, Licencias, Talleres, Usuario, Usuarios } from "./interfaces";
+import type { AxiosError } from "axios";
+import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearTaller, DatosUsuarioRegistro, Licencias, OrdenServicioAPI, Talleres, Usuario, Usuarios } from "./interfaces";
+
+type ApiError = AxiosError<{
+    detail?: { error?: string };
+    error?: string;
+    message?: string;
+}>;
+
+function getErrorMessage(error: unknown, defaultMessage: string): string {
+    if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as ApiError;
+        return (
+            apiError.response?.data?.detail?.error ||
+            apiError.response?.data?.error ||
+            apiError.response?.data?.message ||
+            defaultMessage
+        );
+    }
+    return defaultMessage;
+}
+
+function logError(context: string, error: unknown): void {
+    console.error(`Error ${context}:`, error);
+}
 
 export async function registrarUsuario(datosUsuario: DatosUsuarioRegistro): Promise<{ ok: boolean; message: string }> {
     try {
@@ -12,15 +36,11 @@ export async function registrarUsuario(datosUsuario: DatosUsuarioRegistro): Prom
 
 
 
-    } catch (error: any) {
-        console.error("Error al registrar el usuario:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al registrar el usuario.";
+    } catch (error: unknown) {
+        logError("al registrar el usuario", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al registrar el usuario.")
         };
     }
 }
@@ -33,20 +53,16 @@ export async function loginUsuario(correo_usuario: string, password_usuario: str
             ok: true,
             message: respuesta.data.message,
             usuario: respuesta.data.usuario,
-            rol_en_taller: respuesta.data.rol_en_taller,
+            rol_en_taller: respuesta.data.usuario.rol_en_taller,
             taller: respuesta.data.taller,
             rol: respuesta.data.rol
         };
 
-    } catch (error: any) {
-        console.error("Error al iniciar sesión:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al iniciar sesion.";
+    } catch (error: unknown) {
+        logError("al iniciar sesión", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al iniciar sesion.")
         };
     }
 }
@@ -61,15 +77,11 @@ export async function crearEmpresa(datosEmpresa: DatosCrearEmpresa): Promise<{ o
             id_empresa: respuesta.data.id_empresa
         }
 
-    } catch (error: any) {
-        console.error("Error al crear la empresa:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al crear la empresa.";
+    } catch (error: unknown) {
+        logError("al crear la empresa", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al crear la empresa.")
         };
     }
 }
@@ -91,15 +103,11 @@ export async function verificarSuscripcion(id_empresa: number): Promise<{ suscri
             message: respuesta.data.message
         }
 
-    } catch (error: any) {
-        console.error("Error al verificar la sesion:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al verificar la suscripcion.";
+    } catch (error: unknown) {
+        logError("al verificar la suscripcion", error);
         return {
             suscripcion_activa: false,
-            message: message
+            message: getErrorMessage(error, "Error al verificar la suscripcion.")
         };
     }
 };
@@ -109,8 +117,8 @@ export async function obtenerLicencias(): Promise<Licencias[]> {
         const respuesta = await apiAxios.get("/suscripciones/obtener_licencias")
 
         return respuesta.data.licencias
-    } catch (error: any) {
-        console.error("Error al obtener las licencias:", error.message);
+    } catch (error: unknown) {
+        logError("al obtener las licencias", error);
         throw error;
     }
 }
@@ -125,15 +133,11 @@ export async function seleccionarLicencia(id_empresa: number, id_licencia: numbe
             message: respuesta.data.message
         }
 
-    } catch (error: any) {
-        console.error("Error al seleccionar la licencia:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al seleccionar la licencia.";
+    } catch (error: unknown) {
+        logError("al seleccionar la licencia", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al seleccionar la licencia.")
         };
     }
 }
@@ -143,8 +147,8 @@ export async function obtenerTalleres(id_empresa: number): Promise<Talleres[]> {
         const respuesta = await apiAxios.get(`talleres/obtener_talleres?id_empresa=${id_empresa}`)
 
         return respuesta.data.talleres
-    } catch (error: any) {
-        console.error("Error al obtener los talleres:", error.message);
+    } catch (error: unknown) {
+        logError("al obtener los talleres", error);
         throw error;
     }
 }
@@ -158,15 +162,11 @@ export async function crearTaller(id_empresa: number, datosTaller: DatosCrearTal
             message: respuesta.data.message
         };
 
-    } catch (error: any) {
-        console.error("Error al crear el taller:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al crear el taller.";
+    } catch (error: unknown) {
+        logError("al crear el taller", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al crear el taller.")
         };
     }
 }
@@ -176,8 +176,8 @@ export async function obtenerUsuariosTaller(id_taller: number): Promise<Usuarios
         const respuesta = await apiAxios.get(`/talleres/obtener_usuarios_taller?id_taller=${id_taller}`)
 
         return respuesta.data.usuarios
-    } catch (error: any) {
-        console.error("Error al obtener los usuarios:", error.message);
+    } catch (error: unknown) {
+        logError("al obtener los usuarios", error);
         throw error;
     }
 }
@@ -191,15 +191,51 @@ export async function crearUsuarioTaller(id_taller: number, rol: number, datosUs
             message: respuesta.data.message
         };
 
-    } catch (error: any) {
-        console.error("Error al crear el usuario:", error);
-        const message =
-            error.response?.data?.detail?.error ||
-            error.response?.data?.error ||
-            "Error al crear el usuario.";
+    } catch (error: unknown) {
+        logError("al crear el usuario", error);
         return {
             ok: false,
-            message: message
+            message: getErrorMessage(error, "Error al crear el usuario.")
         };
+    }
+}
+
+export async function obtenerOrdenes(id_taller: number): Promise<OrdenServicioAPI[]> {
+    try {
+        const respuesta = await apiAxios.get(`/ordenes?id_taller=${id_taller}`)
+
+        return respuesta.data as OrdenServicioAPI[];
+    } catch (error: unknown) {
+        logError("al obtener las ordenes", error);
+        throw error;
+    }
+}
+
+export async function crearClienteTaller(dataCliente: DatosCrearCliente) {
+    try {
+        const respuesta = await apiAxios.post(`/clientes/crear_cliente`, dataCliente)
+        
+        return {
+            ok: true,
+            message: respuesta.data.message
+        };
+
+    } catch (error: unknown) {
+        logError("al crear el cliente", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al crear el cliente.")
+        };
+    }
+}
+
+export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[]> {
+    try {
+        const response = await apiAxios.get(`/clientes/obtener_clientes?id_taller=${id_taller}`)
+
+        return response.data.clientes
+    } catch (error: unknown) {
+        logError("al obtener las ordenes", error);
+        throw error;
     }
 }

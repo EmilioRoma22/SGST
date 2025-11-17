@@ -11,11 +11,14 @@ import { mostrarToast } from "../../utils/MostrarToast"
 import ModalCerrarSesion from "../ModalCerrarSesion"
 import { Loading } from "../Loading"
 import { useAuth } from "../../contexts/AuthContext"
+import { useTaller } from "../../contexts/TallerContext"
 
 export const DashboardTalleres = () => {
     const navigate = useNavigate()
+    const { loading_taller, taller, rol_taller } = useTaller()
+    const { setTaller, setRolTaller } = useTaller()
     const { usuario } = useAuth()
-    const [id_licencia] = useState("")
+    const [id_licencia, setLicencia] = useState("")
     const [deshabilitarAgregarTaller, setDeshabilitarAgregarTaller] = useState(false)
     const [talleres, setTalleres] = useState<Talleres[]>([])
     const [mostrarModalAgregarTaller, setMostrarModalAgregarTaller] = useState(false)
@@ -27,13 +30,12 @@ export const DashboardTalleres = () => {
         direccion_taller: "",
         rfc_taller: "",
     })
-    const [_loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     const obtTalleres = async () => {
         if (usuario) {
             const respuesta = await obtenerTalleres(usuario.id_empresa);
             setTalleres(respuesta)
-            setLoading(false)
         }
     }
 
@@ -41,7 +43,10 @@ export const DashboardTalleres = () => {
         if (usuario) {
             const respuesta = await verificarSuscripcion(usuario.id_empresa)
 
-            if (respuesta.suscripcion_activa) return
+            if (respuesta.suscripcion_activa) {
+                if (!respuesta.id_licencia) return
+                else setLicencia(respuesta.id_licencia.toString())
+            }
             else {
                 navigate("/suscripciones")
             }
@@ -49,17 +54,15 @@ export const DashboardTalleres = () => {
     }
 
     useEffect(() => {
-        const hayTallerActivo = localStorage.getItem("tallerActivo");
-        if (hayTallerActivo) {
-            navigate("/dashboard");
-            return;
+        if (!loading_taller) if (taller && rol_taller) {
+            navigate("/dashboard")
         }
-        
+    
         Promise.all([
             verificar(),
             obtTalleres()
-        ])
-    }, [])
+        ]).then(()=>{setLoading(false)})
+    }, [loading_taller, taller, rol_taller])
 
     useEffect(() => {
         const verificarLimiteTalleres = () => {
@@ -131,7 +134,10 @@ export const DashboardTalleres = () => {
                                 transition={{ delay: i * 0.1 }}
                                 className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 transition-transform transform hover:scale-[1.02] ease-in-out duration-300"
                                 onClick={() => {
-                                    localStorage.setItem("tallerActivo", JSON.stringify({ ...taller, rol_taller: "ADMIN" }))
+                                    localStorage.setItem("tallerActivo", taller.id_taller.toString())
+                                    localStorage.setItem("rolActivo", "ADMIN")
+                                    setTaller(taller)
+                                    setRolTaller("ADMIN")
                                     navigate("/dashboard")
                                 }}
                             >
@@ -166,7 +172,7 @@ export const DashboardTalleres = () => {
                     </div>
                 ) : (
                     <>
-                        {!_loading && (
+                        {!loading && (
                             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
                                 <Wrench className="w-14 h-14 mb-4 text-gray-400" />
                                 <p className="text-lg font-medium">Aún no tienes talleres registrados</p>
@@ -199,7 +205,7 @@ export const DashboardTalleres = () => {
 
             <Toaster />
 
-            {(_loading) && (
+            {(loading || loading_taller) && (
                 <Loading />
             )}
         </div>

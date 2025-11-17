@@ -12,7 +12,7 @@ import { useAuth } from "../contexts/AuthContext"
 
 export const CrearEmpresa = () => {
     const navigate = useNavigate()
-    const { loading, usuario, setUsuario } = useAuth()
+    const { loadingUsuario, usuario, setUsuario } = useAuth()
     const [formEmpresa, setFormEmpresa] = useState({
         nombre_empresa: "",
         correo_empresa: "",
@@ -28,7 +28,7 @@ export const CrearEmpresa = () => {
         telefono_empresa: ""
     })
 
-    const [_loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false)
     const [mostrarModal, setMostrarModal] = useState(false)
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -40,16 +40,15 @@ export const CrearEmpresa = () => {
     }
 
     useEffect(() => {
-        if (!loading) {
-            if (!usuario) {
+        if (!loadingUsuario) {
+            if (usuario === null) {
                 navigate("/")
                 return
             }
 
             if (usuario.id_empresa !== 0) navigate("/suscripciones")
-
         }
-    }, [])
+    }, [loadingUsuario])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -83,7 +82,7 @@ export const CrearEmpresa = () => {
                 mostrarToast(respuesta.message, "success")
                 if (!usuario) return;
 
-                setUsuario(prev => 
+                setUsuario(prev =>
                     prev ? {
                         ...prev,
                         id_empresa: respuesta.id_empresa!
@@ -102,8 +101,6 @@ export const CrearEmpresa = () => {
             setLoading(false);
         }
     };
-
-
 
     return (
         <div>
@@ -273,9 +270,11 @@ export const CrearEmpresa = () => {
                 )}
             </AnimatePresence>
 
-            {(_loading || loading) && (
-                <Loading />
-            )}
+            <AnimatePresence>
+                {(loading || loadingUsuario) && (
+                    <Loading />
+                )}
+            </AnimatePresence>
             <Toaster />
         </div>
     );

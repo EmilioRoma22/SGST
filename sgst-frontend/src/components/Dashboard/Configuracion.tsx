@@ -6,8 +6,10 @@ import { mostrarToast } from "../../utils/MostrarToast";
 import { Toaster } from "react-hot-toast";
 import { ModalAgregarUsuario } from "./ModalAgregarUsuario";
 import { obtenerUsuariosTaller } from "../../services/api";
+import { useTaller } from "../../contexts/TallerContext";
 
 export default function ConfiguracionTaller() {
+  const { taller, rol_taller } = useTaller()
   const [usuariosTaller, setUsuariosTaller] = useState<Usuarios[]>()
   const [modalAgregarUsuario, setModalAgregarUsuario] = useState(false);
   const [formDatos, setFormDatos] = useState({
@@ -18,22 +20,21 @@ export default function ConfiguracionTaller() {
     password_usuario: "",
     confirmar_password_usuario: ""
   });
-  const [rol, setRol] = useState<'ADMIN' | 'TECNICO' | 'RECEPCIONISTA'>("ADMIN");
   const [loading, setLoading] = useState(false)
 
   const obtUsuariosTaller = async () => {
-    setLoading(true)
-    const tallerActivo = localStorage.getItem("tallerActivo");
-    const taller = tallerActivo ? JSON.parse(tallerActivo) : null;
-    setRol(taller.rol_taller);
-
+    if (!taller) return
     const respuesta = await obtenerUsuariosTaller(taller.id_taller)
     setUsuariosTaller(respuesta)
-    setLoading(false)
+
   }
 
   useEffect(() => {
-    obtUsuariosTaller();
+    setLoading(true)
+
+    Promise.all([
+      obtUsuariosTaller(),
+    ]).then(()=>{setLoading(false)})
   }, [])
 
   const usuario_creado = async () => {
@@ -63,7 +64,7 @@ export default function ConfiguracionTaller() {
           <h2 className="text-2xl font-bold text-gray-800">Configuración del sistema</h2>
         </motion.div>
 
-        {rol === "ADMIN" && (
+        {rol_taller === "ADMIN" && (
           <>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -101,7 +102,7 @@ export default function ConfiguracionTaller() {
                   <>
                     {loading ? (
                       <div className="flex gap-4">
-                        <LoaderCircle className="h-6 w-6 animate-spin text-black"/>
+                        <LoaderCircle className="h-6 w-6 animate-spin text-black" />
                         <span className="text-black font-semibold text-lg">Cargando usuarios del taller...</span>
                       </div>
                     ) : (

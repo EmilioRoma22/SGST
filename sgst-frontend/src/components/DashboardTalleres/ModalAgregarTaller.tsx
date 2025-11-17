@@ -94,7 +94,7 @@ export const ModalAgregarTaller = ({ cerrarModal, formTaller, setFormTaller, mos
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [cerrarModal]);
 
     return (
         <motion.div

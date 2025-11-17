@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DatosUsuarioRegistro } from "../../services/interfaces";
 import { Loading } from "../Loading";
 import { crearUsuarioTaller } from "../../services/api";
+import { useTaller } from "../../contexts/TallerContext";
 
 type Props = {
     cerrarModal: () => void;
@@ -17,6 +18,7 @@ export const ModalAgregarUsuario = ({ cerrarModal, formDatos, setFormDatos, most
     const [loading, setLoading] = useState(false)
     const [mostrarContraseña, setMostrarContraseña] = useState(false);
     const [mostrarContraseñaConfirmar, setMostrarContraseñaConfirmar] = useState(false);
+    const { taller } = useTaller()
     const [rol, setRol] = useState(2)
     const [errores, setErrores] = useState({
         nombre_usuario: "",
@@ -26,8 +28,6 @@ export const ModalAgregarUsuario = ({ cerrarModal, formDatos, setFormDatos, most
         password_usuario: "",
         confirmar_password_usuario: ""
     });
-    const tallerActivo = localStorage.getItem("tallerActivo");
-    const taller = tallerActivo ? JSON.parse(tallerActivo) : null;
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
 
@@ -67,7 +67,7 @@ export const ModalAgregarUsuario = ({ cerrarModal, formDatos, setFormDatos, most
         }
 
         try {
-            if (!tallerActivo) {
+            if (!taller) {
                 mostrarToast("No se encontró el taller activo. Por favor, intenta de nuevo.", "error");
                 setLoading(false);
                 return;

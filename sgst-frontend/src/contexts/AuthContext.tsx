@@ -5,7 +5,7 @@ import { registerAuthHandlers } from "../services/apiAxios";
 
 interface AuthContextProps {
     usuario: Usuario | null;
-    loading: boolean;
+    loadingUsuario: boolean;
     setUsuario: React.Dispatch<React.SetStateAction<Usuario | null>>;
     cerrarSesionUsuario: () => Promise<void>;
     sesionExpirada: boolean;
@@ -14,7 +14,7 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps>({
     usuario: null,
-    loading: true,
+    loadingUsuario: true,
     setUsuario: () => { },
     cerrarSesionUsuario: async () => { },
     sesionExpirada: false,
@@ -23,7 +23,7 @@ const AuthContext = createContext<AuthContextProps>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loadingUsuario, setLoading] = useState(true);
     const [sesionExpirada, setSesionExpirada] = useState(false);
 
     useEffect(() => {
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return (
         <AuthContext.Provider value={{
             usuario,
-            loading,
+            loadingUsuario,
             setUsuario,
             cerrarSesionUsuario,
             sesionExpirada,

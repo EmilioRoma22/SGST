@@ -10,26 +10,29 @@ import { Suscripciones } from './components/Suscripciones'
 import { Error } from './components/errores/Error'
 import { Dashboard } from './components/Dashboard/Dashboard'
 import { AuthProvider } from './contexts/AuthContext'
+import { TallerProvider } from './contexts/TallerContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+      <TallerProvider>
+        <BrowserRouter>
+          <Routes>
 
-          <Route path="/" element={<Inicio />} />
+            <Route path="/" element={<Inicio />} />
 
-          <Route element={<RutaProtegida />}>
-            <Route path="/crear_empresa" element={<CrearEmpresa />} />
-            <Route path="/dashboard_talleres" element={<DashboardTalleres />} />
-            <Route path="/suscripciones" element={<Suscripciones />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
+            <Route element={<RutaProtegida />}>
+              <Route path="/crear_empresa" element={<CrearEmpresa />} />
+              <Route path="/dashboard_talleres" element={<DashboardTalleres />} />
+              <Route path="/suscripciones" element={<Suscripciones />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
 
-          <Route path="/error_servidor" element={<Error />} />
+            <Route path="/error_servidor" element={<Error />} />
 
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </TallerProvider>
     </AuthProvider>
   </StrictMode>,
 )

@@ -6,6 +6,22 @@ import mysql.connector
 
 router = APIRouter(prefix="/talleres", tags=["Talleres"])
 
+@router.get("/obtener_taller", status_code=status.HTTP_200_OK)
+def obtener_taller(id_taller: int, usuario=Depends(verify_token)):
+    try:
+        connection = get_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM talleres WHERE id_taller = %s", (id_taller, ))
+        taller = cursor.fetchone()
+        
+        return { "taller": taller }
+    except mysql.connector.Error as err:
+        print(f"Error en /obtener_talleres: {err}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+    finally:
+        connection.close()
+        cursor.close()
 @router.get("/obtener_talleres", status_code=status.HTTP_200_OK)
 def obtener_talleres(id_empresa: int, usuario=Depends(verify_token)):
     connection = get_connection()    

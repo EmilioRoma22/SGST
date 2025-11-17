@@ -5,18 +5,18 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function RutaProtegida() {
     const navigate = useNavigate();
-    const { usuario, loading } = useAuth();
+    const { usuario, loadingUsuario } = useAuth();
 
     useEffect(() => {
-        if (!loading) {
+        if (!loadingUsuario) {
             if (!usuario) {
                 navigate("/", { replace: true });
                 return;
             }
         }
-    }, [usuario, loading, navigate]);
+    }, [usuario, loadingUsuario, navigate]);
 
-    if (loading) return <Loading />;
+    if (loadingUsuario) return <Loading />;
     if (!usuario) return null;
 
     return <Outlet />;

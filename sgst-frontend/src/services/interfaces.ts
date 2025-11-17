@@ -26,7 +26,6 @@ export interface Usuario {
     nombre_usuario: string,
     apellidos_usuario: string,
     correo_usuario: string,
-    taller: Talleres | null,
     rol_en_taller: boolean,
     rol: string | null
 }
@@ -92,4 +91,47 @@ export interface Orden {
     ultima_actualizacion: string,
     creado_por: string,
     cerrado_por: string
+}
+
+export interface OrdenServicioAPI {
+    id_orden: number;
+    num_orden: number;
+    cliente: string;
+    equipo: string;
+    falla: string;
+    diagnostico: string;
+    solucion: string;
+    prioridad: string;
+    tecnico: string | null;
+    fecha_estimada: string | null;
+    fecha_entrega: string | null;
+    estado: string;
+    costo: string;
+    meses_garantia?: number;
+    fecha_fin_garantia?: string | null;
+    es_por_garantia?: boolean;
+}
+
+export interface Cliente {
+    id_cliente: number,
+    id_taller: number,
+    nombre_cliente: string,
+    apellidos_cliente: string,
+    correo_cliente: string,
+    telefono_cliente: string,
+    direccion_cliente: string,
+    notas_cliente: string,
+    activo: boolean,
+    fecha_creacion: string,
+    ultima_actualizacion: string
+}
+
+export interface DatosCrearCliente {
+    id_taller: number,
+    nombre_cliente: string,
+    apellidos_cliente: string,
+    correo_cliente: string,
+    telefono_cliente: string,
+    direccion_cliente: string,
+    notas_cliente: string,
 }

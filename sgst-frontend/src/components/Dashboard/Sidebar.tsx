@@ -1,34 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, ClipboardList, Wrench, RefreshCw, BarChart3,
   Calendar, DollarSign, Settings, LogOut, Menu
 } from "lucide-react";
 import { permisosSidebar } from "../../utils/rolesPermitidos";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useTaller } from "../../contexts/TallerContext";
+import { Loading } from "../Loading";
 
 export default function SidebarTaller({ onSelect, active, onLogout }: {
   onSelect: (module: string) => void,
   active: string,
   onLogout: () => void
 }) {
-  const navigate = useNavigate()
+  const { taller, rol_taller, loading_taller } = useTaller()  
   const [open, setOpen] = useState(true);
-  const tallerActivo = localStorage.getItem("tallerActivo");
-  const taller = tallerActivo ? JSON.parse(tallerActivo) : null;
-  const [rol, setRol] = useState<'ADMIN' | 'TECNICO' | 'RECEPCIONISTA'>("ADMIN");
-  const { cerrarSesionUsuario } = useAuth()
-  useEffect(() => {
-    const tallerGuardado = localStorage.getItem("tallerActivo");
-    if (tallerGuardado) {
-      const taller = JSON.parse(tallerGuardado);
-      setRol(taller.rol_taller);
-    } else {
-      cerrarSesionUsuario()
-      navigate('/')
-    }
-  }, []);
 
   const items = [
     { icon: <Users size={20} />, label: "Clientes" },
@@ -41,7 +27,7 @@ export default function SidebarTaller({ onSelect, active, onLogout }: {
     { icon: <Settings size={20} />, label: "Configuración" },
   ];
 
-  const itemsPermitidos = permisosSidebar[rol] || [];
+  const itemsPermitidos = permisosSidebar[(rol_taller ? rol_taller : "ADMIN") as "ADMIN" | "RECEPCIONISTA" | "TECNICO"] || [];
 
   return (
     <div className="h-screen flex bg-gray-50 text-gray-800">
@@ -111,6 +97,12 @@ export default function SidebarTaller({ onSelect, active, onLogout }: {
           </motion.div>
         </div>
       </motion.aside>
+
+      <AnimatePresence>
+        {loading_taller && (
+          <Loading />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

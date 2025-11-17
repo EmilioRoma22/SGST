@@ -7,10 +7,12 @@ import { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { mostrarToast } from '../utils/MostrarToast';
 import { useAuth } from '../contexts/AuthContext';
+import { Loading } from './Loading';
 
 export const Inicio = () => {
     const navigate = useNavigate()
-    const { usuario, loading } = useAuth()
+    const { usuario, loadingUsuario } = useAuth()
+    const [loading, setLoading] = useState(false)
     const [inicioSesionState, setInicioSesionState] = useState(true);
     const [formDatos, setFormDatos] = useState({
         correo_usuario: "",
@@ -26,13 +28,13 @@ export const Inicio = () => {
     });
 
     useEffect(() => {
-        if (!loading) {
+        if (!loadingUsuario) {
             if (usuario) {
                 if (usuario.id_empresa === 0) navigate('/crear_empresa')
                 if (usuario.id_empresa !== 0) navigate("/dashboard_talleres")
             }
         }
-    }, [])
+    }, [loadingUsuario])
 
     return (
         <div className='min-h-screen'>
@@ -79,6 +81,7 @@ export const Inicio = () => {
                                             mostrarToast={mostrarToast}
                                             formDatos={formDatos}
                                             setFormDatos={setFormDatos}
+                                            setLoading={setLoading}
                                         />
                                     </div>
                                 ) : (
@@ -98,6 +101,7 @@ export const Inicio = () => {
                                             mostrarToast={mostrarToast}
                                             formDatos={formDatosRegistro}
                                             setFormDatos={setFormDatosRegistro}
+                                            setLoading={setLoading}
                                         />
                                     </div>
                                 )}
@@ -107,6 +111,12 @@ export const Inicio = () => {
                 </div>
 
                 <Toaster />
+
+                <AnimatePresence>
+                    {(loading || loadingUsuario) && (
+                        <Loading />
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

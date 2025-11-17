@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Loading } from './Loading';
+import React, { useState } from "react";
 import { Eye, EyeClosed, Mail, Phone } from 'lucide-react';
 import { registrarUsuario } from '../services/api';
 import { motion } from 'motion/react';
@@ -18,10 +17,10 @@ type Props = {
     mostrarToast: (mensaje: string, tipo: "error" | "success") => void,
     formDatos: FormDatos;
     setFormDatos: React.Dispatch<React.SetStateAction<FormDatos>>;
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const Registro = ({ mostrarToast, registroCompleto, formDatos, setFormDatos }: Props) => {
-    const [loading, setLoading] = useState(false)
+export const Registro = ({ mostrarToast, registroCompleto, formDatos, setFormDatos, setLoading }: Props) => {
     const [mostrarContraseña, setMostrarContraseña] = useState(false);
     const [mostrarContraseñaConfirmar, setMostrarContraseñaConfirmar] = useState(false);
     const [errores, setErrores] = useState({
@@ -293,10 +292,6 @@ export const Registro = ({ mostrarToast, registroCompleto, formDatos, setFormDat
                     </button>
                 </div>
             </form>
-
-            {loading && (
-                <Loading />
-            )}
         </motion.div>
     )
 }

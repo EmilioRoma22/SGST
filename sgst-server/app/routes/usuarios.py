@@ -177,9 +177,9 @@ def login_user(info_usuario: LoginUsuario):
                 "apellidos_usuario": usuario["apellidos_usuario"],
                 "correo_usuario": usuario["correo_usuario"],
                 "rol_en_taller": rol_en_taller,
-                "taller": taller,
-                "rol": rol_taller
-            }
+            },
+            "taller": taller,
+            "rol": rol_taller
         }
         
         response = JSONResponse(

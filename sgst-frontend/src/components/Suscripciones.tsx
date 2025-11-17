@@ -13,48 +13,40 @@ import { Loading } from "./Loading";
 
 export const Suscripciones = () => {
     const navigate = useNavigate();
-    const { usuario, loading } = useAuth()
+    const { usuario, loadingUsuario } = useAuth()
     const [licencias, setLicencias] = useState<Licencias[]>([]);
-    const [_loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [mostrarModal, setMostrarModal] = useState(false)
 
-    useEffect(() => {
-        const verificar = async () => {
-            if (!usuario) {
-                navigate("/")
-                return
-            }
-            
-            if (usuario.id_empresa === 0) {
-                navigate("/crear_empresa");
-                return;
-            }
+    const verificar = async () => {
+        if (!usuario) {
+            navigate("/")
+            return
+        }
 
-            const respuesta = await verificarSuscripcion(usuario.id_empresa);
-            if (respuesta.suscripcion_activa) navigate("/dashboard_talleres");
-        };
+        if (usuario.id_empresa === 0) {
+            navigate("/crear_empresa");
+            return;
+        }
 
-        const obtLicencias = async () => {
-            setLoading(true);
-            try {
-                const _licencias = await obtenerLicencias();
-                setLicencias(_licencias || []);
-            } catch (error: any) {
-                navigate("/error_servidor");
-            } finally {
-                setLoading(false);
-            }
-        };
+        const respuesta = await verificarSuscripcion(usuario.id_empresa);
+        if (respuesta.suscripcion_activa) navigate("/dashboard_talleres");
+    };
 
-        obtLicencias();
-        verificar()
-    }, []);
+    const obtLicencias = async () => {
+        try {
+            const _licencias = await obtenerLicencias();
+            setLicencias(_licencias || []);
+        } catch (error: any) {
+            navigate("/error_servidor");
+        }
+    };
 
     async function handleInputLicencia(licencia: Licencias) {
         try {
             setLoading(true)
 
-            if (!usuario){
+            if (!usuario) {
                 mostrarToast("Hubo un error", "error")
                 return
             }
@@ -68,10 +60,21 @@ export const Suscripciones = () => {
             }
         } catch (error: any) {
             console.error("Error al seleccionar la licencia: ", error.message)
-        }finally {
+        } finally {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        setLoading(true)
+
+        Promise.all([
+            verificar(),
+            obtLicencias(),
+        ]).then(() => {
+            setLoading(false)
+        })
+    }, []);
 
     return (
         <>
@@ -98,7 +101,7 @@ export const Suscripciones = () => {
                     </p>
                 </div>
 
-                {_loading ? (
+                {loading ? (
                     <p className="text-center text-gray-500">Cargando licencias...</p>
                 ) : (
                     <div className="container mx-auto grid gap-10 lg:grid-cols-2 xl:grid-cols-3">
@@ -183,6 +186,8 @@ export const Suscripciones = () => {
                     </div>
                 )}
             </div>
+            
+            <Toaster />
 
             <AnimatePresence>
                 {mostrarModal && (
@@ -192,11 +197,11 @@ export const Suscripciones = () => {
                 )}
             </AnimatePresence>
 
-            <Toaster />
-            
-            {loading && (
-                <Loading />
-            )}
+            <AnimatePresence>
+                {loadingUsuario && (
+                    <Loading />
+                )}
+            </AnimatePresence>
         </>
     );
 };

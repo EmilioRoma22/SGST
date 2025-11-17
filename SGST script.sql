@@ -130,20 +130,6 @@ CREATE TABLE usuarios_talleres (
   UNIQUE (id_usuario, id_taller)
 );
 
-SELECT
-	u.id_usuario,
-    u.nombre_usuario,
-    u.apellidos_usuario,
-    u.correo_usuario,
-    t.id_taller,
-    ut.rol_taller
-FROM usuarios_talleres ut
-JOIN usuarios u ON u.id_usuario = ut.id_usuario
-JOIN talleres t ON t.id_taller = ut.id_taller
-WHERE ut.id_taller = 1;
-
-SELECT * FROM usuarios_talleres WHERE id_usuario = 1;
-
 -- =========================
 -- CLIENTES
 -- =========================
@@ -341,4 +327,31 @@ CREATE TABLE refresh_tokens (
     valido TINYINT NOT NULL DEFAULT 1,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
         ON DELETE CASCADE
+);
+
+-- ============================================
+-- EXTENSIÓN: CAMPOS DE GARANTÍA EN ORDENES (SGST) Y TABLA ORDENES_GARANTIAS
+-- ============================================
+
+ALTER TABLE ordenes
+  ADD COLUMN meses_garantia INT NOT NULL DEFAULT 0 AFTER costo_total,
+  ADD COLUMN fecha_fin_garantia DATE NULL AFTER meses_garantia,
+  ADD COLUMN es_por_garantia TINYINT NOT NULL DEFAULT 0 AFTER fecha_fin_garantia,
+  ADD COLUMN id_orden_origen INT NULL AFTER es_por_garantia;
+
+ALTER TABLE ordenes
+  ADD CONSTRAINT fk_ordenes_origen_sgst
+    FOREIGN KEY (id_orden_origen) REFERENCES ordenes(id_orden);
+
+CREATE TABLE IF NOT EXISTS ordenes_garantias (
+  id_garantia INT AUTO_INCREMENT PRIMARY KEY,
+  id_orden INT NOT NULL,
+  id_orden_origen INT NULL,
+  fecha_aplicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  descripcion TEXT,
+  monto_cubierto DECIMAL(12,2) DEFAULT 0.00,
+  cubre_total TINYINT DEFAULT 1,
+  activo TINYINT DEFAULT 1,
+  FOREIGN KEY (id_orden) REFERENCES ordenes(id_orden),
+  FOREIGN KEY (id_orden_origen) REFERENCES ordenes(id_orden)
 );

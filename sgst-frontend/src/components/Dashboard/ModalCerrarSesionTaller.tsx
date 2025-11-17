@@ -1,11 +1,8 @@
 import { motion } from "framer-motion";
 import { LogOut, X } from "lucide-react";
 import { useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
 
-const ModalCerrarSesion = ({ cerrarModal }: { cerrarModal: () => void }) => {
-    const { cerrarSesionUsuario } = useAuth()
-
+export const ModalCerrarSesionTaller = ({ cerrarModal, cerrarSesion }: { cerrarModal: () => void, cerrarSesion: () => void}) => {
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -59,7 +56,7 @@ const ModalCerrarSesion = ({ cerrarModal }: { cerrarModal: () => void }) => {
                         <button
                             onClick={async () => {
                                 try {
-                                    cerrarSesionUsuario()
+                                    cerrarSesion()
                                 } catch (error) {
                                     console.error(error);
                                 }
@@ -81,5 +78,3 @@ const ModalCerrarSesion = ({ cerrarModal }: { cerrarModal: () => void }) => {
         </motion.div>
     )
 }
-
-export default ModalCerrarSesion;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SidebarTaller from "./Sidebar";
-import Clientes from "./Clientes";
+import Clientes from "./clientes/Clientes";
 import Ordenes from "./ordenes/Ordenes";
 import Finanzas from "./Finanzas";
 import Configuracion from "./Configuracion";
@@ -10,10 +10,14 @@ import Reportes from "./Reportes";
 import Calendario from "./Calendario";
 import Equipos from "./Equipos";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTaller } from "../../contexts/TallerContext";
+import { AnimatePresence } from "motion/react";
+import { ModalCerrarSesionTaller } from "./ModalCerrarSesionTaller";
 
 export const Dashboard = () => {
     const navigate = useNavigate()
-    const [, setTaller] = useState<number>(0);
+    const { loading_taller, taller, rol_taller, setTaller, setRolTaller } = useTaller()
+    const [ModalCerrarSesion, setModalCerrarSesion] = useState(false)
     const [active, setActive] = useState("NADA");
     const { usuario, cerrarSesionUsuario } = useAuth()
 
@@ -42,33 +46,38 @@ export const Dashboard = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("tallerActivo");
+        localStorage.removeItem("rolActivo")
+        setTaller(null)
+        setRolTaller(null)
 
         if (usuario?.id_empresa === 0) {
             cerrarSesionUsuario()
-            navigate("/")
+            navigate('/')
         }
 
         navigate("/dashboard_talleres")
     };
 
     useEffect(() => {
-        const tallerGuardado = localStorage.getItem("tallerActivo");
-
-        if (!tallerGuardado) {
-            navigate("/dashboard_talleres");
-            return;
+        if (!loading_taller) if (!taller && !rol_taller) {
         }
-
-        const taller = JSON.parse(tallerGuardado);
-        setTaller(taller);
-    }, [])
+    }, [loading_taller, taller, rol_taller])
 
     return (
         <div className="flex h-screen">
-            <SidebarTaller onSelect={setActive} active={active} onLogout={handleLogout} />
+            <SidebarTaller onSelect={setActive} active={active} onLogout={()=>setModalCerrarSesion(true)} />
             <main className="flex-1 p-8 overflow-y-auto bg-gray-50">
                 {renderContent()}
             </main>
+
+            <AnimatePresence>
+                {ModalCerrarSesion && (
+                    <ModalCerrarSesionTaller
+                        cerrarModal={() => {setModalCerrarSesion(false)}}
+                        cerrarSesion={handleLogout}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

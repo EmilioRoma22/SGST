@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Loading } from './Loading';
+import { useState } from "react";
 import { Eye, EyeClosed, Mail } from 'lucide-react';
 import { loginUsuario } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { motion } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
+import { useTaller } from "../contexts/TallerContext";
 
 type FormDatos = {
     correo_usuario: string,
@@ -15,31 +15,18 @@ type Props = {
     mostrarToast: (mensaje: string, tipo: "error" | "success") => void,
     formDatos: FormDatos;
     setFormDatos: React.Dispatch<React.SetStateAction<FormDatos>>;
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const Login = ({ mostrarToast, formDatos, setFormDatos }: Props) => {
+export const Login = ({ mostrarToast, formDatos, setFormDatos, setLoading }: Props) => {
     const navigate = useNavigate();
-    const { setUsuario, usuario, loading } = useAuth()
-    const [_loading, setLoading] = useState(false)
+    const { setTaller, setRolTaller } = useTaller()
+    const { setUsuario } = useAuth()
     const [mostrarContraseña, setMostrarContraseña] = useState(false);
     const [errores, setErrores] = useState({
         correo_usuario: "",
         password_usuario: "",
     });
-
-    useEffect(() => {
-        if (!loading && usuario) {
-            if (usuario.id_empresa === 0) {
-                if (usuario.rol_en_taller) {
-                    localStorage.setItem("tallerActivo", JSON.stringify({ ...usuario.taller, rol_taller: usuario.rol }))
-                    navigate("/dashboard")
-                } else {
-                    navigate('/crear_empresa')
-                }
-            }
-            if (usuario.id_empresa !== 0) navigate("/dashboard_talleres")
-        }
-    }, [usuario, loading]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -76,8 +63,13 @@ export const Login = ({ mostrarToast, formDatos, setFormDatos }: Props) => {
                 setUsuario(respuesta.usuario)
 
                 if (respuesta.usuario.id_empresa === 0) {
-                    if (respuesta.rol_en_taller) {
-                        localStorage.setItem("tallerActivo", JSON.stringify({ ...respuesta.taller, rol_taller: respuesta.rol }))
+                    if (respuesta.rol_en_taller && respuesta.taller?.id_taller && respuesta.rol) {
+                        localStorage.setItem("tallerActivo", respuesta.taller.id_taller.toString())
+                        localStorage.setItem("rolActivo", respuesta.rol)
+
+                        setTaller(respuesta.taller)
+                        setRolTaller(respuesta.rol ? respuesta.rol : "")
+
                         navigate("/dashboard")
                     } else {
                         navigate('/crear_empresa')
@@ -171,11 +163,6 @@ export const Login = ({ mostrarToast, formDatos, setFormDatos }: Props) => {
                     </button>
                 </div>
             </form>
-
-            {(_loading || loading) && (
-                <Loading />
-            )}
-
         </motion.div>
     )
 }
