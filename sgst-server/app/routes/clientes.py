@@ -15,7 +15,7 @@ def obtener_clientes(id_taller: int, usuario=Depends(verify_token)):
         connection = get_connection()
         cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM clientes WHERE id_taller = %s", (id_taller, ))
+        cursor.execute("SELECT * FROM clientes WHERE id_taller = %s AND activo = 1", (id_taller, ))
         clientes = cursor.fetchall()
         
         return {"clientes": clientes}
@@ -31,15 +31,13 @@ def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token))
     try:
         connection = get_connection()
         cursor = connection.cursor()
-        
-        print(data_cliente)
-        
+                
         cursor.execute("""
             SELECT 'correo' as tipo FROM clientes 
-            WHERE correo_cliente = %s AND id_taller = %s
+            WHERE correo_cliente = %s AND id_taller = %s AND activo = 1
             UNION
             SELECT 'telefono' as tipo FROM clientes 
-            WHERE telefono_cliente = %s AND id_taller = %s
+            WHERE telefono_cliente = %s AND id_taller = %s AND activo = 1
         """, (data_cliente.correo_cliente, data_cliente.id_taller, 
             data_cliente.telefono_cliente, data_cliente.id_taller))
 
@@ -92,8 +90,8 @@ def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token))
 def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify_token)):
     try:
         connection = get_connection()
-        cursor = connection.cursor(dictionary=True)
-        
+        cursor = connection.cursor()
+                        
         cursor.execute("""
             SELECT 'correo' as tipo FROM clientes 
             WHERE correo_cliente = %s AND id_taller = %s AND id_cliente != %s
@@ -108,16 +106,16 @@ def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify
 
         resultados = cursor.fetchall()
         errores = [fila[0] for fila in resultados]
-        
+
         if 'correo' in errores:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error": "Ya existe un cliente con el correo ingresado"})
         if 'telefono' in errores:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error": "Ya existe un cliente con el telefono ingresado"})
         
-        cursor.execute(""""
+        cursor.execute("""
             UPDATE 
                 clientes 
-            SET 
+            SET
                 nombre_cliente = %s, 
                 apellidos_cliente = %s, 
                 correo_cliente = %s, 
@@ -125,14 +123,16 @@ def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify
                 direccion_cliente = %s, 
                 notas_cliente = %s
             WHERE
-                id_cliente = %s
+                id_cliente = %s AND id_taller = %s
         """, (
             data_cliente.nombre_cliente,
             data_cliente.apellidos_cliente,
             data_cliente.correo_cliente,
             data_cliente.telefono_cliente,
             data_cliente.direccion_cliente,
-            data_cliente.notas_cliente
+            data_cliente.notas_cliente,
+            data_cliente.id_cliente,
+            data_cliente.id_taller
         ))
         
         if cursor.rowcount == 0:
@@ -142,6 +142,9 @@ def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify
         
         return {"message": "El cliente ha sido modificado correctamente"}
     except Error as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+    except Exception as err:
         print(f"Error interno: {err}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
     finally:
@@ -154,7 +157,8 @@ def eliminar_cliente(id_cliente: int, usuario=Depends(verify_token)):
         connection = get_connection()
         cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("UPDATE clientes SET activo = 0 WHERE id_cliente = %s", (id_cliente, ))
+        #cursor.execute("UPDATE clientes SET activo = 0 WHERE id_cliente = %s", (id_cliente, ))
+        cursor.execute("DELETE FROM clientes WHERE id_cliente = %s", (id_cliente, ))
         
         if cursor.rowcount == 0:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error": "Hubo un error al eliminar el cliente"})

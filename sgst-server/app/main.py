@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# TODO: Mejorar el manejo de errores en todas las rutas, atrapar errores que no sean de MySQL
 app.include_router(usuarios.router)
 app.include_router(empresas.router)
 app.include_router(suscripciones.router)

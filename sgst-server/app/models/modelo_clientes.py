@@ -18,3 +18,7 @@ class DataModificarCliente(BaseModel):
     telefono_cliente: str
     direccion_cliente: str
     notas_cliente: str
+    
+class DataEliminarCliente(BaseModel):
+    id_cliente: int
+    id_taller: int

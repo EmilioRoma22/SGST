@@ -1,7 +1,8 @@
 import apiAxios from "./apiAxios";
 import type { AxiosError } from "axios";
-import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearTaller, DatosUsuarioRegistro, Licencias, OrdenServicioAPI, Talleres, Usuario, Usuarios } from "./interfaces";
+import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearTaller, DatosModificarCliente, DatosUsuarioRegistro, Licencias, OrdenServicioAPI, Talleres, Usuario, Usuarios } from "./interfaces";
 
+// TODO: Mejorar el manejo de los mensajes de error de la api, las funciones para ello no funcionan.
 type ApiError = AxiosError<{
     detail?: { error?: string };
     error?: string;
@@ -211,6 +212,17 @@ export async function obtenerOrdenes(id_taller: number): Promise<OrdenServicioAP
     }
 }
 
+export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[]> {
+    try {
+        const response = await apiAxios.get(`/clientes/obtener_clientes?id_taller=${id_taller}`)
+
+        return response.data.clientes
+    } catch (error: unknown) {
+        logError("al obtener las ordenes", error);
+        throw error;
+    }
+}
+
 export async function crearClienteTaller(dataCliente: DatosCrearCliente) {
     try {
         const respuesta = await apiAxios.post(`/clientes/crear_cliente`, dataCliente)
@@ -229,13 +241,36 @@ export async function crearClienteTaller(dataCliente: DatosCrearCliente) {
     }
 }
 
-export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[]> {
+export async function modificarClienteTaller(dataCliente: DatosModificarCliente): Promise<{ok: boolean, message: string}> {
     try {
-        const response = await apiAxios.get(`/clientes/obtener_clientes?id_taller=${id_taller}`)
+        const respuesta = await apiAxios.put("/clientes/modificar_cliente", dataCliente)
 
-        return response.data.clientes
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
     } catch (error: unknown) {
-        logError("al obtener las ordenes", error);
-        throw error;
+        logError("al modificar el cliente", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al modificar el cliente.")
+        };
+    }
+}
+
+export async function eliminarClienteTaller(id_cliente: number): Promise<{ok: boolean, message: string}> {
+    try {
+        const respuesta = await apiAxios.delete(`/clientes/eliminar_cliente?id_cliente=${id_cliente}`)
+
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
+    } catch (error: unknown) {
+        logError("al modificar el cliente", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al modificar el cliente.")
+        };
     }
 }

@@ -7,11 +7,15 @@ import { AnimatePresence } from "motion/react";
 import { Toaster } from "react-hot-toast";
 import { useTaller } from "../../../contexts/TallerContext";
 import { obtenerClientesTaller } from "../../../services/api";
+import { ModalModificarCliente } from "./ModalModificarCliente";
+import { ModalEliminarCliente } from "./ModalEliminarCliente";
 
 export default function ClientesTabla() {
   const { taller } = useTaller()
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [modalCrearCliente, setModalCrearCliente] = useState(false);
+  const [modalModificarCliente, setModalModificarCliente] = useState(false)
+  const [modalEliminarCliente, setModalEliminarCliente] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formDatos, setFormDatos] = useState({
     id_taller: taller?.id_taller ?? 0,
@@ -22,6 +26,21 @@ export default function ClientesTabla() {
     direccion_cliente: "",
     notas_cliente: ""
   });
+  const [formModificarCliente, setFormModificarCliente] = useState({
+    id_taller: taller?.id_taller ?? 0,
+    id_cliente: 0,
+    nombre_cliente: "",
+    apellidos_cliente: "",
+    correo_cliente: "",
+    telefono_cliente: "",
+    direccion_cliente: "",
+    notas_cliente: ""
+  })
+  const [clienteSeleccionado, setClienteSeleccionado] = useState({
+    id_cliente: 0,
+    nombre_cliente: "",
+    apellidos_cliente: "",
+  })
 
   const obtClientes = async () => {
     try {
@@ -39,7 +58,7 @@ export default function ClientesTabla() {
 
     Promise.all([
       obtClientes(),
-    ]).then(() => {setLoading(false)})
+    ]).then(() => { setLoading(false) })
   }, [])
 
   return (
@@ -93,10 +112,40 @@ export default function ClientesTabla() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">{c.direccion_cliente}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-500 italic">{c.notas_cliente}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-center flex justify-center gap-2">
-                        <button className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-200 transition">
+                        <button
+                          className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-200 transition"
+                          onClick={() => {
+                            setFormModificarCliente({
+                              id_taller: c.id_taller,
+                              id_cliente: c.id_cliente,
+                              nombre_cliente: c.nombre_cliente,
+                              apellidos_cliente: c.apellidos_cliente,
+                              correo_cliente: c.correo_cliente,
+                              direccion_cliente: c.direccion_cliente,
+                              notas_cliente: c.notas_cliente,
+                              telefono_cliente: c.telefono_cliente
+                            })
+                            setClienteSeleccionado({
+                              id_cliente: c.id_cliente,
+                              nombre_cliente: c.nombre_cliente,
+                              apellidos_cliente: c.apellidos_cliente
+                            })
+                            setModalModificarCliente(true)
+                          }}
+                        >
                           <Edit size={14} /> Editar
                         </button>
-                        <button className="flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-lg hover:bg-red-200 transition">
+                        <button 
+                          className="flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-lg hover:bg-red-200 transition"
+                          onClick={() => {
+                            setClienteSeleccionado({
+                              nombre_cliente: c.nombre_cliente,
+                              apellidos_cliente: c.apellidos_cliente,
+                              id_cliente: c.id_cliente
+                            })
+                            setModalEliminarCliente(true)
+                          }}
+                        >
                           <Trash2 size={14} /> Eliminar
                         </button>
                       </td>
@@ -113,7 +162,7 @@ export default function ClientesTabla() {
                 <tr>
                   <td colSpan={7} className="text-center p-8 text-gray-400 font-semibold">
                     <div className="flex justify-center items-center gap-4">
-                      <LoaderCircle className="animate-spin"/>
+                      <LoaderCircle className="animate-spin" />
                       <span>Cargando clientes</span>
                     </div>
                   </td>
@@ -136,6 +185,30 @@ export default function ClientesTabla() {
             cliente_creado={() => {
               obtClientes()
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modalModificarCliente && (
+          <ModalModificarCliente
+            cerrarModal={() => setModalModificarCliente(false)}
+            cliente_modificado={obtClientes}
+            formModificarCliente={formModificarCliente}
+            setFormModificarCliente={setFormModificarCliente}
+            clienteSeleccionado={clienteSeleccionado}
+            mostrarToast={mostrarToast}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modalEliminarCliente && (
+          <ModalEliminarCliente 
+            cerrarModal={() => setModalEliminarCliente(false)}
+            clienteSeleccionado={clienteSeleccionado}
+            cliente_eliminado={obtClientes}
+            mostrarToast={mostrarToast}
           />
         )}
       </AnimatePresence>

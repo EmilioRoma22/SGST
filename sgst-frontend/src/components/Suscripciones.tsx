@@ -16,6 +16,7 @@ export const Suscripciones = () => {
     const { usuario, loadingUsuario } = useAuth()
     const [licencias, setLicencias] = useState<Licencias[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingLicencia, setLoadingLicencia] = useState(false)
     const [mostrarModal, setMostrarModal] = useState(false)
 
     const verificar = async () => {
@@ -44,7 +45,7 @@ export const Suscripciones = () => {
 
     async function handleInputLicencia(licencia: Licencias) {
         try {
-            setLoading(true)
+            setLoadingLicencia(true)
 
             if (!usuario) {
                 mostrarToast("Hubo un error", "error")
@@ -61,7 +62,7 @@ export const Suscripciones = () => {
         } catch (error: any) {
             console.error("Error al seleccionar la licencia: ", error.message)
         } finally {
-            setLoading(false)
+            setLoadingLicencia(false)
         }
     }
 
@@ -199,6 +200,12 @@ export const Suscripciones = () => {
 
             <AnimatePresence>
                 {loadingUsuario && (
+                    <Loading />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {loadingLicencia && (
                     <Loading />
                 )}
             </AnimatePresence>
