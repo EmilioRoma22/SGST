@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from app.auth.dependencies import verify_token
-from datetime import datetime, timedelta, timezone
 from app.models.modelo_empresa import DatosCrearEmpresa
 from app.core.database import get_connection
 from app.auth.jwt_handler import crear_token
-import mysql.connector
+from mysql.connector import Error
 
 router = APIRouter(prefix="/empresas", tags=["Empresas"])
 
@@ -61,12 +60,6 @@ def crear_empresa(datos_empresa: DatosCrearEmpresa, usuario=Depends(verify_token
                        (usuario["id_usuario"], datos_empresa.nombre_empresa, datos_empresa.rfc_empresa, datos_empresa.telefono_empresa, datos_empresa.correo_empresa, datos_empresa.direccion_empresa)
                     )
         
-        if cursor.rowcount == 0:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={"error": "Hubo un problema al registrar la empresa, intentelo más tarde, disculpa las molestias."}
-            )
-        
         id_empresa = cursor.lastrowid
         
         cursor.execute("UPDATE usuarios SET id_empresa = %s WHERE id_usuario = %s", (id_empresa, usuario["id_usuario"]))
@@ -96,9 +89,22 @@ def crear_empresa(datos_empresa: DatosCrearEmpresa, usuario=Depends(verify_token
         )
 
         return response
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()

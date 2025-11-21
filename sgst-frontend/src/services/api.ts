@@ -1,8 +1,7 @@
 import apiAxios from "./apiAxios";
 import type { AxiosError } from "axios";
-import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearTaller, DatosModificarCliente, DatosUsuarioRegistro, Licencias, OrdenServicioAPI, Talleres, Usuario, Usuarios } from "./interfaces";
+import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearEquipo, DatosCrearOrden, DatosCrearTaller, DatosModificarCliente, DatosUsuarioRegistro, Equipos, Licencias, OrdenServicioAPI, Talleres, TipoEquipo, Usuario, Usuarios } from "./interfaces";
 
-// TODO: Mejorar el manejo de los mensajes de error de la api, las funciones para ello no funcionan.
 type ApiError = AxiosError<{
     detail?: { error?: string };
     error?: string;
@@ -10,15 +9,27 @@ type ApiError = AxiosError<{
 }>;
 
 function getErrorMessage(error: unknown, defaultMessage: string): string {
-    if (error && typeof error === "object" && "response" in error) {
+    if (error && typeof error === "object" && "isAxiosError" in error) {
         const apiError = error as ApiError;
-        return (
-            apiError.response?.data?.detail?.error ||
-            apiError.response?.data?.error ||
-            apiError.response?.data?.message ||
-            defaultMessage
-        );
+
+        const data = apiError.response?.data;
+
+        if (!data) return defaultMessage;
+
+        if (typeof data.detail === "string") {
+            return data.detail;
+        }
+
+        if (typeof data.detail === "object" && data.detail?.error) {
+            return data.detail.error;
+        }
+
+        if (data.error) return data.error;
+        if (data.message) return data.message;
+
+        return defaultMessage;
     }
+
     return defaultMessage;
 }
 
@@ -34,8 +45,6 @@ export async function registrarUsuario(datosUsuario: DatosUsuarioRegistro): Prom
             ok: true,
             message: respuesta.data.message
         }
-
-
 
     } catch (error: unknown) {
         logError("al registrar el usuario", error);
@@ -223,10 +232,21 @@ export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[
     }
 }
 
+export async function obtenerUltimoClienteTaller(id_taller: number): Promise<Cliente> {
+    try {
+        const response = await apiAxios.get(`/clientes/obtener_ultimo_cliente?id_taller=${id_taller}`)
+
+        return response.data.cliente
+    } catch (error: unknown) {
+        logError("al obtener las ordenes", error);
+        throw error;
+    }
+}
+
 export async function crearClienteTaller(dataCliente: DatosCrearCliente) {
     try {
         const respuesta = await apiAxios.post(`/clientes/crear_cliente`, dataCliente)
-        
+
         return {
             ok: true,
             message: respuesta.data.message
@@ -241,7 +261,7 @@ export async function crearClienteTaller(dataCliente: DatosCrearCliente) {
     }
 }
 
-export async function modificarClienteTaller(dataCliente: DatosModificarCliente): Promise<{ok: boolean, message: string}> {
+export async function modificarClienteTaller(dataCliente: DatosModificarCliente): Promise<{ ok: boolean, message: string }> {
     try {
         const respuesta = await apiAxios.put("/clientes/modificar_cliente", dataCliente)
 
@@ -258,7 +278,7 @@ export async function modificarClienteTaller(dataCliente: DatosModificarCliente)
     }
 }
 
-export async function eliminarClienteTaller(id_cliente: number): Promise<{ok: boolean, message: string}> {
+export async function eliminarClienteTaller(id_cliente: number): Promise<{ ok: boolean, message: string }> {
     try {
         const respuesta = await apiAxios.delete(`/clientes/eliminar_cliente?id_cliente=${id_cliente}`)
 
@@ -271,6 +291,92 @@ export async function eliminarClienteTaller(id_cliente: number): Promise<{ok: bo
         return {
             ok: false,
             message: getErrorMessage(error, "Error al modificar el cliente.")
+        };
+    }
+}
+
+export async function obtenerEquiposTaller(id_taller: number): Promise<Equipos[]> {
+    try {
+        const response = await apiAxios.get(`/equipos/obtener_equipos?id_taller=${id_taller}`)
+
+        return response.data.equipos
+    } catch (error: unknown) {
+        logError("al obtener los equipos", error);
+        throw error;
+    }
+}
+
+export async function obtenerTipoEquipos(id_taller: number): Promise<TipoEquipo[]> {
+    try {
+        const response = await apiAxios.get(`/equipos/obtener_tipo_equipos?id_taller=${id_taller}`)
+
+        return response.data.tipo_equipos
+    } catch (error: unknown) {
+        logError("al obtener los tipos de equipos", error);
+        throw error;
+    }
+}
+
+export async function crearTipoEquipoTaller(id_taller: number, nombre_tipo: string): Promise<{ ok: boolean, message: string }> {
+    try {
+        const respuesta = await apiAxios.post(`/equipos/crear_tipo_equipo?id_taller=${id_taller}&nombre_tipo=${nombre_tipo}`)
+
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
+    } catch (error: unknown) {
+        logError("al crear el tipo de equipo", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al crear el tipo de equipo.")
+        };
+    }
+}
+
+export async function crearEquipoTaller(dataEquipo: DatosCrearEquipo): Promise<{ ok: boolean, message: string }> {
+    try {
+        const respuesta = await apiAxios.post(`/equipos/crear_equipo`, dataEquipo)
+
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
+    } catch (error: unknown) {
+        logError("al crear el equipo", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al crear el equipo.")
+        };
+    }
+
+}
+
+export async function obtenerUltimoEquipoTaller(id_taller: number): Promise<Equipos> {
+    try {
+        const response = await apiAxios.get(`/equipos/
+            ?id_taller=${id_taller}`)
+
+        return response.data.ultimo_equipo
+    } catch (error: unknown) {
+        logError("al obtener el ultimo equipo", error);
+        throw error;
+    }
+}
+
+export async function crearOrdenTaller(dataOrden: DatosCrearOrden): Promise<{ ok: boolean, message: string }> {
+    try {
+        const respuesta = await apiAxios.post(`/ordenes/crear_orden`, dataOrden)
+
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
+    } catch (error: unknown) {
+        logError("al crear la orden", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al crear la orden.")
         };
     }
 }

@@ -26,7 +26,6 @@ export default function ConfiguracionTaller() {
     if (!taller) return
     const respuesta = await obtenerUsuariosTaller(taller.id_taller)
     setUsuariosTaller(respuesta)
-
   }
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function ConfiguracionTaller() {
 
     Promise.all([
       obtUsuariosTaller(),
-    ]).then(()=>{setLoading(false)})
+    ]).then(() => { setLoading(false) })
   }, [])
 
   const usuario_creado = async () => {

@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from app.auth.dependencies import verify_token
 from app.core.database import get_connection
 from app.models.modelo_taller import CrearTaller
-import mysql.connector
+from mysql.connector import Error
 
 router = APIRouter(prefix="/talleres", tags=["Talleres"])
 
@@ -16,12 +16,26 @@ def obtener_taller(id_taller: int, usuario=Depends(verify_token)):
         taller = cursor.fetchone()
         
         return { "taller": taller }
-    except mysql.connector.Error as err:
-        print(f"Error en /obtener_talleres: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        connection.close()
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+            
 @router.get("/obtener_talleres", status_code=status.HTTP_200_OK)
 def obtener_talleres(id_empresa: int, usuario=Depends(verify_token)):
     connection = get_connection()    
@@ -39,12 +53,25 @@ def obtener_talleres(id_empresa: int, usuario=Depends(verify_token)):
         return{
             "talleres": talleres
         }
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.post("/crear_taller", status_code=status.HTTP_201_CREATED)
 def crear_taller(id_empresa: int, datos_taller: CrearTaller, usuario=Depends(verify_token)):
@@ -70,12 +97,25 @@ def crear_taller(id_empresa: int, datos_taller: CrearTaller, usuario=Depends(ver
             "message": "Taller creado exitosamente",
             "id_taller": cursor.lastrowid
         }
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.get("/obtener_usuarios_taller", status_code=status.HTTP_200_OK)
 def obtener_usuarios_taller(id_taller: int, usuario=Depends(verify_token)):
@@ -104,9 +144,22 @@ def obtener_usuarios_taller(id_taller: int, usuario=Depends(verify_token)):
         usuarios = cursor.fetchall()
         
         return {"usuarios": usuarios}
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()

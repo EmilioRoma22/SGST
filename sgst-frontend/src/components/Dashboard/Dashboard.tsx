@@ -8,11 +8,12 @@ import Configuracion from "./Configuracion";
 import Seguimiento from "./Seguimiento";
 import Reportes from "./Reportes";
 import Calendario from "./Calendario";
-import Equipos from "./Equipos";
+import Equipos from "./equipos/Equipos";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTaller } from "../../contexts/TallerContext";
 import { AnimatePresence } from "motion/react";
 import { ModalCerrarSesionTaller } from "./ModalCerrarSesionTaller";
+import { OrdenesLayout } from "./ordenes/OrdenesLayout";
 
 export const Dashboard = () => {
     const navigate = useNavigate()
@@ -26,7 +27,7 @@ export const Dashboard = () => {
             case "Clientes":
                 return <Clientes />;
             case "Órdenes de servicio":
-                return <Ordenes />;
+                return <OrdenesLayout />;
             case "Finanzas":
                 return <Finanzas />;
             case "Configuración":

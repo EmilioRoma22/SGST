@@ -68,7 +68,7 @@ export default function ClientesTabla() {
           <h3 className="text-2xl font-bold text-gray-800">Clientes</h3>
           <button
             onClick={() => setModalCrearCliente(true)}
-            className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition cursor-pointer"
           >
             <Plus size={18} />
             Nuevo cliente
@@ -113,7 +113,7 @@ export default function ClientesTabla() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-500 italic">{c.notas_cliente}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-center flex justify-center gap-2">
                         <button
-                          className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-200 transition"
+                          className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-200 transition cursor-pointer"
                           onClick={() => {
                             setFormModificarCliente({
                               id_taller: c.id_taller,
@@ -135,8 +135,8 @@ export default function ClientesTabla() {
                         >
                           <Edit size={14} /> Editar
                         </button>
-                        <button 
-                          className="flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-lg hover:bg-red-200 transition"
+                        <button
+                          className="flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-lg hover:bg-red-200 transition cursor-pointer"
                           onClick={() => {
                             setClienteSeleccionado({
                               nombre_cliente: c.nombre_cliente,
@@ -204,7 +204,7 @@ export default function ClientesTabla() {
 
       <AnimatePresence>
         {modalEliminarCliente && (
-          <ModalEliminarCliente 
+          <ModalEliminarCliente
             cerrarModal={() => setModalEliminarCliente(false)}
             clienteSeleccionado={clienteSeleccionado}
             cliente_eliminado={obtClientes}

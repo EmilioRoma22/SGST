@@ -1,7 +1,9 @@
-import mysql.connector
+from mysql.connector import Error
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.database import get_connection
 from app.auth.dependencies import verify_token
+from app.models.modelo_ordenes import DataCrearOrden
+from datetime import datetime
 
 router = APIRouter(
     prefix="/ordenes",
@@ -60,12 +62,137 @@ def listar_ordenes(id_taller: int, usuario = Depends(verify_token)):
                 o["tecnico"] = o["tecnico"].strip() or None
 
         return ordenes
-    except mysql.connector.Error as e:
-        print("Error en la base de datos (ordenes):", e)
+    except Error as err:
+        print(f"Error de MySQL: {err}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "Error interno del servidor"}
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
         )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+@router.post("/crear_orden", status_code=status.HTTP_201_CREATED)
+def crear_orden(dataOrden: DataCrearOrden, usuario = Depends(verify_token)):
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT num_orden FROM ordenes WHERE id_taller = %s", (dataOrden.id_taller,))
+        existe_num_orden = cursor.fetchone()
+
+        if existe_num_orden:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"error": "El número de orden ya existe"}
+            )
+        
+        cursor.execute("SELECT MAX(num_orden) FROM ordenes WHERE id_taller = %s", (dataOrden.id_taller,))
+        ultimo_num_orden = cursor.fetchone()
+
+        num_orden = 0
+
+        if ultimo_num_orden[0] == None:
+            num_orden = 1
+        else:
+            num_orden = ultimo_num_orden[0] + 1
+
+        print(dataOrden)
+
+        fecha_estimada_de_fin = datetime.strptime(dataOrden.fecha_estimada_de_fin, "%Y-%m-%d")
+        fecha_fin_garantia = datetime.strptime(dataOrden.fecha_fin_garantia, "%Y-%m-%d")
+
+        sql = """
+            INSERT INTO ordenes (
+                id_taller,
+                num_orden,
+                id_cliente,
+                id_equipo,
+                accesorios,
+                falla,
+                diagnostico_inicial,
+                solucion_aplicada,
+                id_prioridad,
+                tecnico_asignado,
+                fecha_estimada_de_fin,
+                id_estado,
+                costo_total,
+                meses_garantia,
+                fecha_fin_garantia,
+                es_por_garantia,
+                id_orden_origen,
+                creado_por
+            ) VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
+        """
+        cursor.execute(sql, (
+            dataOrden.id_taller,
+            num_orden,
+            dataOrden.id_cliente,
+            dataOrden.id_equipo,
+            dataOrden.accesorios,
+            dataOrden.falla,
+            dataOrden.diagnostico_inicial,
+            dataOrden.solucion_aplicada,
+            dataOrden.id_prioridad,
+            dataOrden.tecnico_asignado,
+            fecha_estimada_de_fin,
+            dataOrden.id_estado,
+            dataOrden.costo_total,
+            dataOrden.meses_garantia,
+            fecha_fin_garantia,
+            dataOrden.es_por_garantia,
+            dataOrden.id_orden_origen or None,
+            usuario['id_usuario']
+        ))
+
+        connection.commit()
+
+        return {"message": "Orden creada exitosamente"}
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()

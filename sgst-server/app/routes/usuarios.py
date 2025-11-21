@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app.core.database import get_connection
 from app.models.modelo_usuario import RegistroUsuario, LoginUsuario
 from app.auth.cifrado_polybios import cifrar_mensaje_polybios
-import mysql.connector
+from mysql.connector import Error
 import bcrypt
 from app.auth.jwt_handler import crear_token
 from app.auth.dependencies import verify_token, obtener_payload
@@ -97,13 +97,24 @@ def refresh_token(request: Request):
         )
 
         return response
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error en /refresh: {e}")
-        raise HTTPException(status_code=500, detail="Error interno en refresh token")
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        if connection:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
             connection.close()
 
 @router.post("/iniciar_sesion", status_code=status.HTTP_200_OK)
@@ -207,14 +218,25 @@ def login_user(info_usuario: LoginUsuario):
         )
 
         return response
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
+    except Error as err:
+        print(f"Error de MySQL: {err}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "Error interno del servidor"}
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
         )
     finally:
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.post("/cerrar_sesion", status_code=200)
 def cerrar_sesion(request: Request):
@@ -251,9 +273,25 @@ def cerrar_sesion(request: Request):
 
         return response
 
-    except Exception as e:
-        print("Error en logout:", e)
-        raise HTTPException(status_code=500, detail="Error interno del servidor")
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
     
 @router.post("/registrar_usuario", status_code=status.HTTP_201_CREATED)
 def register_user(usuario: RegistroUsuario):
@@ -301,12 +339,25 @@ def register_user(usuario: RegistroUsuario):
         connection.commit()
 
         return {"message": "Su registro ha sido existoso, inicie sesión"}
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
         
 @router.post("/crear_usuario_taller", status_code=status.HTTP_201_CREATED)
 def crear_usuario_taller(id_taller: int, rol: int, info_usuario: RegistroUsuario,usuario=Depends(verify_token)):
@@ -363,15 +414,27 @@ def crear_usuario_taller(id_taller: int, rol: int, info_usuario: RegistroUsuario
             rol_str = "RECEPCIONISTA"
 
         query_rol = "INSERT INTO usuarios_talleres (id_usuario, id_taller, rol_taller) VALUES (%s, %s, %s)"
-        print(id_usuario, id_taller, rol_str)
         cursor.execute(query_rol, (id_usuario, id_taller, rol_str))
 
         connection.commit()
 
         return {"message": "Se ha registrado el usuario correctamente"}
-    except mysql.connector.Error as e:
-        print("Error en la base de datos:", e)
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()

@@ -146,3 +146,49 @@ export interface DatosModificarCliente {
     direccion_cliente: string
     notas_cliente: string
 }
+
+export interface DatosCrearOrden {
+    id_taller: number,
+    id_cliente: number,
+    id_equipo: number,
+    accesorios: string,
+    falla: string,
+    diagnostico_inicial: string,
+    solucion_aplicada: string,
+    id_prioridad: number,
+    tecnico_asignado: number,
+    fecha_estimada_de_fin: string,
+    id_estado: number,
+    costo_total: number,
+    meses_garantia: number,
+    fecha_fin_garantia: string,
+    es_por_garantia: number,
+    id_orden_origen: number
+}
+
+export interface DatosCrearEquipo {
+    id_taller: number
+    id_tipo: number
+    num_serie: string
+    marca_equipo: string
+    modelo_equipo: string
+    descripcion_equipo: string
+}
+
+export interface Equipos {
+    id_equipo: number
+    id_taller: number
+    id_tipo: number
+    num_serie: string
+    marca_equipo: string
+    modelo_equipo: string
+    descripcion_equipo: string
+    fecha_registro: string
+    ultima_actualizacion: string
+    nombre_tipo: string
+}
+
+export interface TipoEquipo {
+    id_tipo: number
+    nombre_tipo: string
+}

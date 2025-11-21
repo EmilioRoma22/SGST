@@ -184,25 +184,6 @@ CREATE TABLE equipos (
 ) ENGINE=InnoDB;
 
 -- =========================
--- TÉCNICOS
--- =========================
-CREATE TABLE tecnicos (
-  id_tecnico INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
-  username_tecnico VARCHAR(100) NOT NULL,
-  nombre_tecnico VARCHAR(100) NOT NULL,
-  apellidos_tecnico VARCHAR(100) NOT NULL,
-  numero_tecnico VARCHAR(20),
-  correo_tecnico VARCHAR(150),
-  activo TINYINT DEFAULT 1,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  ultima_actualizacion TIMESTAMP NULL,
-  FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
-  UNIQUE (id_taller, username_tecnico),
-  INDEX idx_tecnicos_taller (id_taller)
-) ENGINE=InnoDB;
-
--- =========================
 -- ORDENES DE SERVICIO
 -- =========================
 CREATE TABLE ordenes (
@@ -218,22 +199,27 @@ CREATE TABLE ordenes (
   id_prioridad TINYINT UNSIGNED NOT NULL DEFAULT 2, -- referencia cat_prioridades
   tecnico_asignado INT NULL,
   fecha_estimada_de_fin DATE NULL,
-  fecha_entrega DATE NULL,
+  fecha_entrega DATE NULL, -- AL MOMENTO DE YA ENTREGAR LA ORDEN
   id_estado TINYINT UNSIGNED NOT NULL DEFAULT 1, -- referencia cat_estados
   costo_total DECIMAL(12,2) DEFAULT 0.00,
+  meses_garantia INT NOT NULL DEFAULT 0,
+  fecha_fin_garantia DATE NULL,
+  es_por_garantia TINYINT DEFAULT 0,
+  id_orden_origen INT NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   ultima_actualizacion TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-  creado_por INT NULL,
-  cerrado_por INT NULL,
+  creado_por INT NULL, -- SE COLOCA EN EL ENDPOINT
+  cerrado_por INT NULL, -- SE COLOCA EN EL ENDPOINT
   visible TINYINT DEFAULT 1,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
   FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente) ON DELETE RESTRICT,
   FOREIGN KEY (id_equipo) REFERENCES equipos(id_equipo) ON DELETE RESTRICT,
-  FOREIGN KEY (tecnico_asignado) REFERENCES tecnicos(id_tecnico) ON DELETE SET NULL,
+  FOREIGN KEY (tecnico_asignado) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
   FOREIGN KEY (creado_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
   FOREIGN KEY (cerrado_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
   FOREIGN KEY (id_prioridad) REFERENCES cat_prioridades(id_prioridad) ON DELETE RESTRICT,
   FOREIGN KEY (id_estado) REFERENCES cat_estados(id_estado) ON DELETE RESTRICT,
+  FOREIGN KEY (id_orden_origen) REFERENCES ordenes(id_orden) ON DELETE SET NULL,
   UNIQUE (id_taller, num_orden),
   INDEX idx_ordenes_taller (id_taller),
   INDEX idx_ordenes_cliente (id_cliente),

@@ -19,8 +19,6 @@ interface Orden {
   estado: string;
   costo: string;
   visible: boolean;
-
-  // Garantía
   meses_garantia?: number;
   fecha_fin_garantia?: string | null;
   es_por_garantia?: boolean;

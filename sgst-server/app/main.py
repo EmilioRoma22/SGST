@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import usuarios, empresas, suscripciones, talleres, ordenes, clientes
+from app.routes import usuarios, empresas, suscripciones, talleres, ordenes, clientes, equipos
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,10 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TODO: Mejorar el manejo de errores en todas las rutas, atrapar errores que no sean de MySQL
 app.include_router(usuarios.router)
 app.include_router(empresas.router)
 app.include_router(suscripciones.router)
 app.include_router(talleres.router)
 app.include_router(ordenes.router)
 app.include_router(clientes.router)
+app.include_router(equipos.router)

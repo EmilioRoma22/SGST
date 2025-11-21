@@ -20,11 +20,22 @@ def obtener_clientes(id_taller: int, usuario=Depends(verify_token)):
         
         return {"clientes": clientes}
     except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except Exception as err:
         print(f"Error interno: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        connection.close()
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.post("/crear_cliente", status_code=status.HTTP_201_CREATED)
 def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token)):
@@ -58,10 +69,9 @@ def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token))
                             correo_cliente, 
                             telefono_cliente, 
                             direccion_cliente, 
-                            notas_cliente, 
-                            activo
+                            notas_cliente
                        )
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, 1)""",
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
                        (
                            data_cliente.id_taller,
                            data_cliente.nombre_cliente,
@@ -72,19 +82,29 @@ def crear_cliente(data_cliente: DataCrearCliente, usuario=Depends(verify_token))
                            data_cliente.notas_cliente
                        )
         )
-        
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"error": "No se ha podido crear el cliente"})
 
         connection.commit()
     
         return {"message": "Se ha creado el cliente correctamente"}
     except Error as err:
-        print(f"Error en /crear_cliente: {err}")
-        raise HTTPException(status_code=500, detail={"error": "Error interno del servidor"})
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        connection.close()
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.put("/modificar_cliente", status_code=status.HTTP_200_OK)
 def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify_token)):
@@ -136,20 +156,30 @@ def modificar_cliente(data_cliente: DataModificarCliente, usuario=Depends(verify
         ))
         
         if cursor.rowcount == 0:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error": "Hubo un error al modificar al cliente"})
+            return {"message": "La operación fue existosa, pero no se realizaron cambios"}
         
         connection.commit()
         
         return {"message": "El cliente ha sido modificado correctamente"}
     except Error as err:
-        print(f"Error interno: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
     except Exception as err:
         print(f"Error interno: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        connection.close()
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 
 @router.delete("/eliminar_cliente", status_code=status.HTTP_200_OK)
 def eliminar_cliente(id_cliente: int, usuario=Depends(verify_token)):
@@ -166,8 +196,53 @@ def eliminar_cliente(id_cliente: int, usuario=Depends(verify_token)):
         
         return {"message", "El usuario ha sido eliminado correctamente"}
     except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
         print(f"Error interno: {err}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": "Error interno en el servidor"})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
     finally:
-        connection.close()
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+@router.get("/obtener_ultimo_cliente", status_code=status.HTTP_200_OK)
+def obtener_ultimo_cliente(usuario=Depends(verify_token)):
+    try:
+        connection = get_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM clientes ORDER BY id_cliente DESC LIMIT 1")
+        cliente = cursor.fetchone()
+        
+        return {
+            "cliente": cliente
+        }
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
