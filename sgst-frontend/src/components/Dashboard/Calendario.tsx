@@ -30,10 +30,10 @@ export default function CalendarioTaller() {
       setLoading(true);
       const data = await obtenerOrdenesTaller(taller.id_taller);
       if (rol_taller === "TECNICO") {
-        const ordenesTecnico = data.filter(orden => orden.id_tecnico === usuario?.id_usuario)
+        const ordenesTecnico = data.filter(orden => orden.id_tecnico === usuario?.id_usuario && orden.id_estado !== 3)
         setOrdenes(ordenesTecnico)
       } else {
-        setOrdenes(data)
+        setOrdenes(data.filter(orden => orden.id_estado !== 3))
       }
     } catch (error) {
       console.error("Error al cargar órdenes:", error);
@@ -72,8 +72,8 @@ export default function CalendarioTaller() {
   const renderHeader = () => (
     <div className="flex justify-between items-center mb-8 px-2">
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-blue-50 rounded-xl">
-          <CalendarIcon className="w-6 h-6 text-blue-600" />
+        <div className="p-3 bg-gray-50 rounded-xl">
+          <CalendarIcon className="w-6 h-6 text-gray-800" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900 capitalize">
@@ -139,20 +139,20 @@ export default function CalendarioTaller() {
             onClick={() => setFechaSeleccionada(cloneDia)}
             className={`relative h-24 p-2 border border-gray-50 cursor-pointer transition-all duration-200 
               ${!esMesActual ? "bg-gray-50/30 text-gray-300" : "bg-white"} 
-              ${estaSeleccionado ? "ring-2 ring-blue-500 ring-inset z-10 rounded-xl" : "hover:bg-gray-50"} 
+              ${estaSeleccionado ? "ring-2 ring-gray-500 ring-inset z-10 rounded-xl" : "hover:bg-gray-50"} 
               ${i === 0 ? "rounded-l-xl" : ""} 
               ${i === 6 ? "rounded-r-xl" : ""}`}
           >
             <div className="flex justify-between items-start">
               <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
-                ${estaSeleccionado ? "bg-blue-600 text-white" : esHoy ? "bg-blue-100 text-blue-700" : "text-gray-700"}`}
+                ${estaSeleccionado ? "bg-gray-600 text-white" : esHoy ? "bg-gray-300 text-gray-700" : "text-gray-700"}`}
               >
                 {fechaFormateada}
               </span>
               {hayOrdenes && (
                 <span className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-gray-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-500"></span>
                 </span>
               )}
             </div>
@@ -162,7 +162,7 @@ export default function CalendarioTaller() {
                 const fecha = parsearFechaLocal(o.fecha_estimada_de_fin);
                 return fecha && isSameDay(fecha, dia);
               }).slice(0, 2).map((orden, idx) => (
-                <div key={idx} className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">
+                <div key={idx} className="text-[10px] truncate px-1.5 py-0.5 rounded bg-gray-50 text-gray-700 border border-gray-100">
                   {orden.nombre_tipo}
                 </div>
               ))}
@@ -207,10 +207,10 @@ export default function CalendarioTaller() {
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
+                <Clock className="w-5 h-5 text-gray-600" />
                 Entregas Programadas
               </h3>
-              <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
                 {format(fechaSeleccionada, "d MMM", { locale: es })}
               </span>
             </div>

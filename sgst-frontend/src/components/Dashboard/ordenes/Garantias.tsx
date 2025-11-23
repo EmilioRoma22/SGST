@@ -18,7 +18,7 @@ export default function Garantias() {
       try {
         setLoading(true);
         const datos = await obtenerOrdenesTaller(taller.id_taller);
-        setOrdenes(datos);
+        setOrdenes(datos.filter(o => o.id_estado === 3));
       } catch (error) {
         console.error("Error al cargar órdenes:", error);
         mostrarToast("Error al cargar las órdenes", "error");
@@ -74,7 +74,7 @@ export default function Garantias() {
                   )}
                 </div>
                 <h4 className="text-lg font-bold text-gray-900">
-                  {o.nombre_cliente}
+                  {o.nombre_cliente} {o.apellidos_cliente}
                 </h4>
                 <p className="text-gray-600 font-medium">{o.nombre_tipo} {o.marca_equipo} {o.modelo_equipo}</p>
                 <div className="text-sm text-gray-500 mt-1 space-y-0.5">
@@ -84,13 +84,13 @@ export default function Garantias() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1 text-right md:text-left min-w-[200px]">
+              <div className="flex flex-col gap-1 text-right md:text-left min-w-[250px] w-[250px]">
                 <div className="flex items-center justify-end md:justify-start gap-2 mb-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${o.descripcion_prioridad === 'Alta' || o.descripcion_prioridad === 'Urgente' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
                     }`}>
                     {o.descripcion_prioridad}
                   </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${o.descripcion_estado === 'Entregado' ? 'bg-green-50 text-green-700' :
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${o.descripcion_estado === 'Finalizado' ? 'bg-green-50 text-green-700' :
                     o.descripcion_estado === 'En Reparación' ? 'bg-yellow-50 text-yellow-700' :
                       'bg-gray-100 text-gray-700'
                     }`}>
@@ -102,7 +102,7 @@ export default function Garantias() {
                   <span className="font-medium">Técnico:</span> {(o.nombre_tecnico + " " + o.apellidos_tecnico) || "Sin asignar"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Entrega estimada:</span> {new Date(o.fecha_estimada_de_fin).toLocaleDateString('es-MX', {
+                  <span className="font-medium">Fecha final:</span> {new Date(o.fecha_fin_garantia).toLocaleDateString('es-MX', {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric'

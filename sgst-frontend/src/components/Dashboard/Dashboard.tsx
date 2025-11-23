@@ -70,31 +70,31 @@ export const Dashboard = () => {
     useEffect(() => {
         const handleKeyPress = async (event: KeyboardEvent) => {
             const target = event.target as HTMLElement;
+
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
                 return;
             }
 
             if (event.key === 'Enter') {
                 if (barcodeBuffer.current.length > 0) {
-                    const numOrden = parseInt(barcodeBuffer.current);
+                    const id_orden = parseInt(barcodeBuffer.current);
 
-                    if (!isNaN(numOrden) && taller?.id_taller) {
+                    if (!isNaN(id_orden) && taller?.id_taller) {
                         try {
                             const ordenes = await obtenerOrdenesTaller(taller.id_taller);
-                            const orden = ordenes.find(o => o.id_orden === numOrden);
+                            const orden = ordenes.find(o => o.id_orden === id_orden);
 
                             if (orden) {
-                                setIdOrdenSeleccionada(orden.id_orden);
+                                setIdOrdenSeleccionada(id_orden);
                                 setModalOrdenVisible(true);
                             } else {
-                                mostrarToast(`No se encontró la orden #${numOrden}`, "error");
+                                mostrarToast(`No se encontró la orden #${id_orden}`, "error");
                             }
                         } catch (error) {
                             console.error("Error al buscar orden:", error);
                             mostrarToast("Error al buscar la orden", "error");
                         }
                     }
-
                     barcodeBuffer.current = "";
                 }
                 return;

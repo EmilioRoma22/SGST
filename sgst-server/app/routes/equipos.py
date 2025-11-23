@@ -107,15 +107,6 @@ def crear_equipo(datos_equipo: DataCrearEquipoTaller, usuario=Depends(verify_tok
         connection = get_connection()
         cursor = connection.cursor()
 
-        cursor.execute("SELECT num_serie FROM equipos WHERE id_taller = %s AND num_serie = %s", (datos_equipo.id_taller, datos_equipo.num_serie))
-        existe_num_serie = cursor.fetchone()
-
-        if existe_num_serie:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"error": "El número de serie ya existe"}
-            )
-
         cursor.execute("""
             INSERT INTO equipos (id_taller, id_tipo, num_serie, marca_equipo, modelo_equipo, descripcion_equipo) 
             VALUES (%s, %s, %s, %s, %s, %s)

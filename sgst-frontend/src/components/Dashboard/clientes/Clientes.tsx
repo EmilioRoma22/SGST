@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Edit,
-  Trash2,
-  Plus,
-  LoaderCircle,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  FileText,
-  Search
-} from "lucide-react";
+import { Edit, Trash2, Plus, LoaderCircle, User, Mail, Phone, MapPin, FileText, Search } from "lucide-react";
 import type { Cliente } from "../../../services/interfaces";
 import { ModalCrearCliente } from "./ModalCrearCliente";
 import { mostrarToast } from "../../../utils/MostrarToast";
