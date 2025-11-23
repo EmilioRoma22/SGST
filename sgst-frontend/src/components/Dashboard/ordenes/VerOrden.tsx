@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { X, Save, Printer, User, Smartphone, Mail, MapPin, Cpu, Hash, FileText, AlertCircle, Clock, DollarSign, CheckCircle } from "lucide-react"
-import { obtenerOrdenTaller, actualizarOrdenTaller, obtenerUsuariosTaller, enviarOrdenCorreo, terminarServicioOrden } from "../../../services/api"
+import { obtenerOrdenTaller, actualizarOrdenTaller, obtenerUsuariosTaller, enviarOrdenCorreo } from "../../../services/api"
 import type { OrdenDetallada, DatosActualizarOrden, Usuarios } from "../../../services/interfaces"
 import { useTaller } from "../../../contexts/TallerContext"
 import { mostrarToast } from "../../../utils/MostrarToast"
 import { generarPDFOrden } from "../../../utils/generarPDF";
 import ModalPDF from "./ModalPDF";
+import { ModalConfirmarTerminar } from "./ModalConfirmarTerminar"
 
 interface VerOrdenProps {
     idOrden: number
@@ -32,6 +33,7 @@ export default function VerOrden({ idOrden, cerrarModal, alActualizar }: VerOrde
     const [metodoPago, setMetodoPago] = useState("Efectivo")
     const [pdfModalAbierto, setPdfModalAbierto] = useState(false);
     const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+    const [modalConfirmarTerminarAbierto, setModalConfirmarTerminarAbierto] = useState(false)
 
     useEffect(() => {
         cargarDatos()
@@ -132,21 +134,7 @@ export default function VerOrden({ idOrden, cerrarModal, alActualizar }: VerOrde
             return;
         }
 
-        if (!confirm("¿Estás seguro de que deseas terminar el servicio? Esta acción no se puede deshacer.")) {
-            return;
-        }
-
-        setGuardando(true);
-        const resultado = await terminarServicioOrden(orden.id_orden, costo, metodoPago);
-
-        if (resultado.ok) {
-            mostrarToast("Servicio terminado correctamente", "success");
-            alActualizar();
-            cerrarModal();
-        } else {
-            mostrarToast(resultado.message, "error");
-        }
-        setGuardando(false);
+        setModalConfirmarTerminarAbierto(true)
     };
 
     if (!idOrden) return null
@@ -450,6 +438,20 @@ export default function VerOrden({ idOrden, cerrarModal, alActualizar }: VerOrde
                         pdfBlob={pdfBlob}
                         onSendCorreo={handleEnviarCorreo}
                         defaultCorreo={orden?.correo_cliente || ""}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {modalConfirmarTerminarAbierto && (
+                    <ModalConfirmarTerminar
+                        cerrarModal={() => setModalConfirmarTerminarAbierto(false)}
+                        id_orden={idOrden}
+                        costo={costo}
+                        metodoPago={metodoPago}
+                        mostrarToast={mostrarToast}
+                        alActualizar={alActualizar}
+                        setGuardando={setGuardando}
                     />
                 )}
             </AnimatePresence>
