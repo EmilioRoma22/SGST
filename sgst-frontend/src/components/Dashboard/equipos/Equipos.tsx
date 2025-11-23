@@ -1,149 +1,225 @@
-import { useState } from "react";
-import { Edit, Trash2 } from "lucide-react";
-
-interface Equipo {
-  id_equipo: number;
-  id_tipo: number;
-  nombre: string;
-  marca_equipo: string;
-  modelo_equipo: string;
-  descripcion_equipo: string;
-  num_serie: string;
-  cliente: string;
-  fecha_registro: string;
-  estado: string;
-  visible: boolean;
-}
+import { useEffect, useState } from "react";
+import { Search, Plus, Laptop, Smartphone, Printer, Tablet, HardDrive, Monitor, Cpu, Calendar, Hash, FileText, Edit, PcCase } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import type { Equipos, TipoEquipo } from "../../../services/interfaces";
+import { mostrarToast } from "../../../utils/MostrarToast";
+import { obtenerEquiposTaller, obtenerTipoEquipos } from "../../../services/api";
+import { useTaller } from "../../../contexts/TallerContext";
+import { ModalCrearEquipo } from "./ModalCrearEquipo";
+import { ModalEditarEquipo } from "./ModalEditarEquipo";
+import { Toaster } from "react-hot-toast";
 
 export default function EquiposGridActualizado() {
-  const tiposEquipos: Record<number, string> = {
-    1: "Computadora portátil",
-    2: "Teléfono móvil",
-    3: "Impresora",
-    4: "Tablet",
+  const { taller } = useTaller();
+  const [equipos, setEquipos] = useState<Equipos[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState("");
+  const [modalNuevoEquipoVisible, setModalNuevoEquipoVisible] = useState(false)
+  const [modalEditarEquipoVisible, setModalEditarEquipoVisible] = useState(false)
+  const [tiposEquipo, setTiposEquipo] = useState<TipoEquipo[]>([]);
+  const [formEquipo, setFormEquipo] = useState({
+    id_taller: taller?.id_taller ?? 0,
+    id_tipo: 0,
+    num_serie: "",
+    marca_equipo: "",
+    modelo_equipo: "",
+    descripcion_equipo: ""
+  })
+  const [equipoSeleccionado, setEquipoSeleccionado] = useState<Equipos | null>(null)
+  const [infoEquipo, setInfoEquipo] = useState({
+    tipo_equipo: "",
+    marca_equipo: "",
+    modelo_equipo: ""
+  })
+
+  const obtTiposEquipo = async () => {
+    try {
+      const respuesta = await obtenerTipoEquipos(taller?.id_taller ?? 0);
+
+      setTiposEquipo(respuesta);
+    } catch (error) {
+      console.error("Error al obtener tipos de equipos:", error);
+    }
+  }
+
+  const obtenerEquipos = async () => {
+    try {
+      setLoading(true)
+      const respuesta = await obtenerEquiposTaller(taller?.id_taller ?? 0);
+      setEquipos(respuesta);
+    } catch (error: unknown) {
+      mostrarToast("Error al obtener los equipos", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [equipos, setEquipos] = useState<Equipo[]>([
-    {
-      id_equipo: 1,
-      id_tipo: 1,
-      nombre: "Laptop XPS 13",
-      marca_equipo: "Dell",
-      modelo_equipo: "XPS 13 9310",
-      descripcion_equipo: "Laptop para uso personal y trabajo",
-      num_serie: "DX13-001",
-      cliente: "Juan Pérez",
-      fecha_registro: "2025-10-25",
-      estado: "En reparación",
-      visible: true,
-    },
-    {
-      id_equipo: 2,
-      id_tipo: 2,
-      nombre: "iPhone 14",
-      marca_equipo: "Apple",
-      modelo_equipo: "iPhone 14 Pro",
-      descripcion_equipo: "Teléfono personal, pantalla rota",
-      num_serie: "IP14-002",
-      cliente: "María González",
-      fecha_registro: "2025-10-28",
-      estado: "Pendiente de diagnóstico",
-      visible: true,
-    },
-    {
-      id_equipo: 3,
-      id_tipo: 3,
-      nombre: "Impresora HP LaserJet",
-      marca_equipo: "HP",
-      modelo_equipo: "LaserJet M404",
-      descripcion_equipo: "Impresora de oficina",
-      num_serie: "HP-LJ404-003",
-      cliente: "Carlos Ramírez",
-      fecha_registro: "2025-10-20",
-      estado: "Lista para entrega",
-      visible: true,
-    },
-    {
-      id_equipo: 4,
-      id_tipo: 3,
-      nombre: "Impresora HP LaserJet",
-      marca_equipo: "HP",
-      modelo_equipo: "LaserJet M404",
-      descripcion_equipo: "Impresora de oficina",
-      num_serie: "HP-LJ404-003",
-      cliente: "Carlos Ramírez",
-      fecha_registro: "2025-10-20",
-      estado: "Lista para entrega",
-      visible: true,
-    },
-    {
-      id_equipo: 5,
-      id_tipo: 3,
-      nombre: "Impresora HP LaserJet",
-      marca_equipo: "HP",
-      modelo_equipo: "LaserJet M404",
-      descripcion_equipo: "Impresora de oficina",
-      num_serie: "HP-LJ404-003",
-      cliente: "Carlos Ramírez",
-      fecha_registro: "2025-10-20",
-      estado: "Lista para entrega",
-      visible: true,
-    },
-    {
-      id_equipo: 6,
-      id_tipo: 3,
-      nombre: "Impresora HP LaserJet",
-      marca_equipo: "HP",
-      modelo_equipo: "LaserJet M404",
-      descripcion_equipo: "Impresora de oficina",
-      num_serie: "HP-LJ404-003",
-      cliente: "Carlos Ramírez",
-      fecha_registro: "2025-10-20",
-      estado: "Lista para entrega",
-      visible: true,
-    },
-  ]);
+  useEffect(() => {
+    Promise.all([
+      obtenerEquipos(),
+      obtTiposEquipo()
+    ])
+  }, []);
+
+  const getIconoEquipo = (tipo: string) => {
+    const tipoLower = tipo.toLowerCase();
+    if (tipoLower.includes("laptop") || tipoLower.includes("portátil")) return <Laptop className="w-6 h-6" />;
+    if (tipoLower.includes("celular") || tipoLower.includes("móvil") || tipoLower.includes("iphone")) return <Smartphone className="w-6 h-6" />;
+    if (tipoLower.includes("impresora")) return <Printer className="w-6 h-6" />;
+    if (tipoLower.includes("tablet")) return <Tablet className="w-6 h-6" />;
+    if (tipoLower.includes("disco") || tipoLower.includes("almacenamiento")) return <HardDrive className="w-6 h-6" />;
+    if (tipoLower.includes("monitor") || tipoLower.includes("pantalla")) return <Monitor className="w-6 h-6" />;
+    if (tipoLower.includes("pc")) return <PcCase className="w-6 h-6" />;
+    return <Cpu className="w-6 h-6" />;
+  };
+
+  const equiposFiltrados = equipos.filter(equipo =>
+    equipo.marca_equipo.toLowerCase().includes(busqueda.toLowerCase()) ||
+    equipo.modelo_equipo.toLowerCase().includes(busqueda.toLowerCase()) ||
+    equipo.num_serie.toLowerCase().includes(busqueda.toLowerCase()) ||
+    equipo.nombre_tipo.toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-gray-800">Gestión de Equipos</h3>
-        <button className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">
-          Nuevo Equipo
-        </button>
-      </div>
+    <div className="">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Equipos Registrados</h1>
+          <p className="text-gray-500 mt-1">Gestiona el inventario de equipos del taller</p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {equipos.map((e) => (
-          <div
-            key={e.id_equipo}
-            className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col justify-between transition hover:shadow-lg ${
-              !e.visible && "opacity-60"
-            }`}
-          >
-            <div className="flex flex-col gap-2">
-              <h4 className="text-lg font-semibold text-gray-900">{e.nombre}</h4>
-              <p className="text-gray-600">Tipo: {tiposEquipos[e.id_tipo]}</p>
-              <p className="text-gray-600">Marca: {e.marca_equipo}</p>
-              <p className="text-gray-600">Modelo: {e.modelo_equipo}</p>
-              <p className="text-gray-600">N. de serie: {e.num_serie}</p>
-              <p className="text-gray-600">Cliente: {e.cliente}</p>
-              <p className="text-gray-600">Fecha registro: {e.fecha_registro}</p>
-              <p className="text-gray-800 font-semibold">Estado: {e.estado}</p>
-              <p className="text-gray-600">Descripción: {e.descripcion_equipo}</p>
-            </div>
-
-            <div className="flex gap-2 mt-4">
-              <button className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg hover:bg-emerald-200 transition">
-                <Edit size={16} /> Editar
-              </button>
-              <button className="flex items-center gap-1 bg-red-100 text-red-600 px-3 py-2 rounded-lg hover:bg-red-200 transition">
-                <Trash2 size={16} /> Eliminar
-              </button>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar equipo..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-full md:w-64"
+            />
           </div>
-        ))}
+
+          <button
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl transition-colors font-medium shadow-lg shadow-gray-900/20"
+            onClick={() => setModalNuevoEquipoVisible(true)}
+          >
+            <Plus className="w-5 h-5" />
+            <span className="hidden sm:inline">Nuevo Equipo</span>
+          </button>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+        </div>
+      ) : equiposFiltrados.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {equiposFiltrados.map((equipo) => (
+            <motion.div
+              key={equipo.id_equipo}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-bl-full -mr-4 -mt-4 transition-colors group-hover:bg-gray-100" />
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-gray-100 rounded-xl text-gray-700 group-hover:bg-gray-600 group-hover:text-white transition-colors duration-300">
+                    {getIconoEquipo(equipo.nombre_tipo)}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        setEquipoSeleccionado(equipo)
+                        setInfoEquipo({
+                          tipo_equipo: equipo.nombre_tipo,
+                          marca_equipo: equipo.marca_equipo,
+                          modelo_equipo: equipo.modelo_equipo
+                        })
+                        setModalEditarEquipoVisible(true)
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Editar">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wider">
+                    {equipo.nombre_tipo}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">
+                    {equipo.marca_equipo}
+                  </h3>
+                  <p className="text-gray-600 font-medium">
+                    {equipo.modelo_equipo}
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Hash className="w-4 h-4" />
+                    <span className="font-mono text-gray-700">{equipo.num_serie}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(equipo.fecha_registro).toLocaleDateString()}</span>
+                  </div>
+                  {equipo.descripcion_equipo && (
+                    <div className="flex items-start gap-2 text-sm text-gray-500 mt-2">
+                      <FileText className="w-4 h-4 mt-0.5 shrink-0" />
+                      <p className="line-clamp-2 text-xs leading-relaxed">
+                        {equipo.descripcion_equipo}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+          <div className="bg-white p-4 rounded-full shadow-sm inline-block mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900">No se encontraron equipos</h3>
+          <p className="text-gray-500 mt-1">Intenta con otra búsqueda o registra un nuevo equipo.</p>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {modalNuevoEquipoVisible && (
+          <ModalCrearEquipo
+            cerrarModal={() => setModalNuevoEquipoVisible(false)}
+            formEquipo={formEquipo}
+            setFormEquipo={setFormEquipo}
+            hayNuevoTipo={() => obtTiposEquipo()}
+            tiposEquipo={tiposEquipo}
+            equipoCreado={() => obtenerEquipos()}
+            mostrarToast={mostrarToast}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modalEditarEquipoVisible && (
+          <ModalEditarEquipo
+            cerrarModal={() => setModalEditarEquipoVisible(false)}
+            hayNuevoTipo={() => obtTiposEquipo()}
+            tiposEquipo={tiposEquipo}
+            equipoActualizado={() => obtenerEquipos()}
+            mostrarToast={mostrarToast}
+            equipo={equipoSeleccionado}
+            infoEquipo={infoEquipo}
+          />
+        )}
+      </AnimatePresence>
+
+      <Toaster />
     </div>
   );
 }

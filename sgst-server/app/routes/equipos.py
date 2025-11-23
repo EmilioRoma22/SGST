@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, HTTPException, Depends
 from app.auth.dependencies import verify_token
 from app.core.database import get_connection
 from mysql.connector import Error
-from app.models.modelo_equipos import DataCrearEquipoTaller
+from app.models.modelo_equipos import DataCrearEquipoTaller, DataEditarEquipoTaller
 
 router = APIRouter(
     prefix="/equipos",
@@ -151,6 +151,47 @@ def crear_equipo(datos_equipo: DataCrearEquipoTaller, usuario=Depends(verify_tok
         if connection and connection.is_connected():
             connection.close()
 
+@router.put("/editar_equipo", status_code=status.HTTP_200_OK)
+def editar_equipo(data_equipo: DataEditarEquipoTaller, usuario=Depends(verify_token)):
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("UPDATE equipos SET id_tipo = %s, num_serie = %s, marca_equipo = %s, modelo_equipo = %s, descripcion_equipo = %s WHERE id_taller = %s AND id_equipo = %s", (
+            data_equipo.id_tipo,
+            data_equipo.num_serie,
+            data_equipo.marca_equipo,
+            data_equipo.modelo_equipo,
+            data_equipo.descripcion_equipo,
+            data_equipo.id_taller,
+            data_equipo.id_equipo
+        ))
+
+        if cursor.rowcount == 0:
+            return {"message": "La operación fue existosa, pero no se realizaron cambios"}
+
+        connection.commit()
+        
+        return {"message": "El equipo ha sido modificado correctamente"}
+    except Error as err:
+        print(f"Error de MySQL: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error en la base de datos"}
+        )
+    except HTTPException as http_err:
+        raise http_err
+    except Exception as err:
+        print(f"Error interno: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Error interno en el servidor"}
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
 @router.get("/obtener_tipo_equipos" ,status_code=status.HTTP_200_OK)
 def obtener_tipo_equipos(id_taller: int, usuario=Depends(verify_token)):
     try:
@@ -196,7 +237,10 @@ def crear_tipo_equipo(id_taller: int, nombre_tipo: str, usuario=Depends(verify_t
         cursor.execute("INSERT INTO tipo_equipos (id_taller, nombre_tipo) VALUES (%s, %s)", (id_taller, nombre_tipo))
         connection.commit()
     
-        return {"message": "Se ha creado el tipo de equipo correctamente"}
+        return {
+            "message": "Se ha creado el tipo de equipo correctamente",
+            "id_tipo": cursor.lastrowid
+        }
     except Error as err:
         print(f"Error de MySQL: {err}")
         raise HTTPException(

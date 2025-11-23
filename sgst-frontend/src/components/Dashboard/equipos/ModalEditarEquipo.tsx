@@ -1,34 +1,41 @@
 import { Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import type { TipoEquipo } from "../../../services/interfaces";
+import type { Equipos, TipoEquipo } from "../../../services/interfaces";
 import { useTaller } from "../../../contexts/TallerContext";
-import { crearEquipoTaller, crearTipoEquipoTaller } from "../../../services/api";
+import { crearEquipoTaller, crearTipoEquipoTaller, modificarEquipoTaller } from "../../../services/api";
 
-type formEquipo = {
-    id_taller: number;
-    id_tipo: number;
-    num_serie: string;
-    marca_equipo: string;
-    modelo_equipo: string;
-    descripcion_equipo: string;
+type infoEquipo = {
+    tipo_equipo: string,
+    marca_equipo: string,
+    modelo_equipo: string
 }
 
 type Props = {
     cerrarModal: () => void;
     mostrarToast: (mensaje: string, tipo: "success" | "error") => void;
-    equipoCreado: () => void;
-    formEquipo: formEquipo,
-    setFormEquipo: React.Dispatch<React.SetStateAction<formEquipo>>
+    equipo: Equipos | null,
+    infoEquipo: infoEquipo
+    equipoActualizado: () => void;
     tiposEquipo: TipoEquipo[],
     hayNuevoTipo: () => void,
 }
 
-export const ModalCrearEquipo = ({ cerrarModal, mostrarToast, equipoCreado, formEquipo, setFormEquipo, tiposEquipo, hayNuevoTipo }: Props) => {
+export const ModalEditarEquipo = ({ cerrarModal, mostrarToast, equipoActualizado, tiposEquipo, hayNuevoTipo, equipo, infoEquipo }: Props) => {
     const { taller } = useTaller()
     const [loading, setLoading] = useState(false);
     const [nuevoTipo, setNuevoTipo] = useState("");
     const [mostrarInputTipo, setMostrarInputTipo] = useState(false);
+    const [formEquipo, setFormEquipo] = useState({
+        id_taller: taller?.id_taller ?? 0,
+        id_equipo: equipo?.id_equipo ?? 0,
+        id_tipo: equipo?.id_tipo ?? 0,
+        num_serie: equipo?.num_serie ?? "",
+        marca_equipo: equipo?.marca_equipo ?? "",
+        modelo_equipo: equipo?.modelo_equipo ?? "",
+        descripcion_equipo: equipo?.descripcion_equipo ?? "",
+    });
+
     const [errores, setErrores] = useState({
         id_tipo: "",
         num_serie: "",
@@ -107,9 +114,9 @@ export const ModalCrearEquipo = ({ cerrarModal, mostrarToast, equipoCreado, form
         }
 
         try {
-            const respuesta = await crearEquipoTaller(formEquipo);
+            const respuesta = await modificarEquipoTaller(formEquipo);
             if (respuesta.ok) {
-                equipoCreado();
+                equipoActualizado();
                 mostrarToast(respuesta.message, "success");
                 cerrarModal();
             } else {
@@ -166,8 +173,8 @@ export const ModalCrearEquipo = ({ cerrarModal, mostrarToast, equipoCreado, form
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-6">
-                        <h1 className="text-slate-900 text-3xl font-bold">Nuevo Equipo</h1>
-                        <p className="text-slate-500 text-sm mt-1">Ingresa los detalles del equipo a registrar.</p>
+                        <h1 className="text-slate-900 text-3xl font-bold">Editar equipo</h1>
+                        <p className="text-slate-500 text-sm mt-1">{infoEquipo.tipo_equipo} {infoEquipo.marca_equipo} {infoEquipo.modelo_equipo}</p>
                     </div>
 
                     <div className="space-y-5">
@@ -316,7 +323,7 @@ export const ModalCrearEquipo = ({ cerrarModal, mostrarToast, equipoCreado, form
                             disabled={loading}
                             className="w-full py-3 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none cursor-pointer transition-colors ease-in-out disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {loading ? "Registrando..." : "Registrar Equipo"}
+                            {loading ? "Modificando..." : "Modificar Equipo"}
                         </button>
                     </div>
                 </form>

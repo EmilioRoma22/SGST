@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import usuarios, empresas, suscripciones, talleres, ordenes, clientes, equipos
+from app.routes import usuarios, empresas, suscripciones, talleres, ordenes, clientes, equipos, finanzas
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,3 +26,4 @@ app.include_router(talleres.router)
 app.include_router(ordenes.router)
 app.include_router(clientes.router)
 app.include_router(equipos.router)
+app.include_router(finanzas.router)

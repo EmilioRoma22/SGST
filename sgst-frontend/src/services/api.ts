@@ -1,6 +1,6 @@
 import apiAxios from "./apiAxios";
 import type { AxiosError } from "axios";
-import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearEquipo, DatosCrearOrden, DatosCrearTaller, DatosModificarCliente, DatosUsuarioRegistro, Equipos, Licencias, OrdenServicioAPI, Talleres, TipoEquipo, Usuario, Usuarios } from "./interfaces";
+import type { Cliente, DatosCrearCliente, DatosCrearEmpresa, DatosCrearEquipo, DatosCrearOrden, DatosCrearTaller, DatosModificarCliente, DatosUsuarioRegistro, Equipos, Licencias, Talleres, TipoEquipo, Usuario, Usuarios, OrdenDetallada, DatosActualizarOrden, DatosEditarEquipo, OrdenServicio } from "./interfaces";
 
 type ApiError = AxiosError<{
     detail?: { error?: string };
@@ -210,22 +210,11 @@ export async function crearUsuarioTaller(id_taller: number, rol: number, datosUs
     }
 }
 
-export async function obtenerOrdenes(id_taller: number): Promise<OrdenServicioAPI[]> {
-    try {
-        const respuesta = await apiAxios.get(`/ordenes?id_taller=${id_taller}`)
-
-        return respuesta.data as OrdenServicioAPI[];
-    } catch (error: unknown) {
-        logError("al obtener las ordenes", error);
-        throw error;
-    }
-}
-
 export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[]> {
     try {
-        const response = await apiAxios.get(`/clientes/obtener_clientes?id_taller=${id_taller}`)
+        const respuesta = await apiAxios.get(`/clientes/obtener_clientes?id_taller=${id_taller}`)
 
-        return response.data.clientes
+        return respuesta.data.clientes
     } catch (error: unknown) {
         logError("al obtener las ordenes", error);
         throw error;
@@ -234,9 +223,9 @@ export async function obtenerClientesTaller(id_taller: number): Promise<Cliente[
 
 export async function obtenerUltimoClienteTaller(id_taller: number): Promise<Cliente> {
     try {
-        const response = await apiAxios.get(`/clientes/obtener_ultimo_cliente?id_taller=${id_taller}`)
+        const respuesta = await apiAxios.get(`/clientes/obtener_ultimo_cliente?id_taller=${id_taller}`)
 
-        return response.data.cliente
+        return respuesta.data.cliente
     } catch (error: unknown) {
         logError("al obtener las ordenes", error);
         throw error;
@@ -317,13 +306,14 @@ export async function obtenerTipoEquipos(id_taller: number): Promise<TipoEquipo[
     }
 }
 
-export async function crearTipoEquipoTaller(id_taller: number, nombre_tipo: string): Promise<{ ok: boolean, message: string }> {
+export async function crearTipoEquipoTaller(id_taller: number, nombre_tipo: string): Promise<{ ok: boolean, message: string, id_tipo?: number }> {
     try {
         const respuesta = await apiAxios.post(`/equipos/crear_tipo_equipo?id_taller=${id_taller}&nombre_tipo=${nombre_tipo}`)
 
         return {
             ok: true,
-            message: respuesta.data.message
+            message: respuesta.data.message,
+            id_tipo: respuesta.data.id_tipo
         }
     } catch (error: unknown) {
         logError("al crear el tipo de equipo", error);
@@ -349,13 +339,28 @@ export async function crearEquipoTaller(dataEquipo: DatosCrearEquipo): Promise<{
             message: getErrorMessage(error, "Error al crear el equipo.")
         };
     }
+}
 
+export async function modificarEquipoTaller(dataEquipo: DatosEditarEquipo): Promise<{ ok: boolean, message: string }> {
+    try {
+        const respuesta = await apiAxios.put(`/equipos/editar_equipo`, dataEquipo)
+
+        return {
+            ok: true,
+            message: respuesta.data.message
+        }
+    } catch (error: unknown) {
+        logError("al modificar el equipo", error);
+        return {
+            ok: false,
+            message: getErrorMessage(error, "Error al modificar el equipo.")
+        };
+    }
 }
 
 export async function obtenerUltimoEquipoTaller(id_taller: number): Promise<Equipos> {
     try {
-        const response = await apiAxios.get(`/equipos/
-            ?id_taller=${id_taller}`)
+        const response = await apiAxios.get(`/equipos/obtener_ultimo_equipo?id_taller=${id_taller}`)
 
         return response.data.ultimo_equipo
     } catch (error: unknown) {
@@ -378,5 +383,77 @@ export async function crearOrdenTaller(dataOrden: DatosCrearOrden): Promise<{ ok
             ok: false,
             message: getErrorMessage(error, "Error al crear la orden.")
         };
+    }
+}
+
+export async function obtenerOrdenesTaller(id_taller: number): Promise<OrdenServicio[]> {
+    try {
+        const response = await apiAxios.get(`/ordenes/obtener_ordenes?id_taller=${id_taller}`)
+
+        return response.data.ordenes
+    } catch (error: unknown) {
+        logError("al obtener las ordenes", error);
+        throw error;
+    }
+}
+
+export async function obtenerOrdenTaller(id_orden: number): Promise<OrdenDetallada> {
+    try {
+        const response = await apiAxios.get(`/ordenes/obtener_orden?id_orden=${id_orden}`)
+        return response.data.orden
+    } catch (error: unknown) {
+        logError("al obtener la orden", error);
+        throw error;
+    }
+}
+
+export async function actualizarOrdenTaller(datos: DatosActualizarOrden) {
+    try {
+        const response = await apiAxios.put("/ordenes/actualizar_orden", datos)
+        return { ok: true, message: response.data.message }
+    } catch (error: any) {
+        logError("al actualizar la orden", error)
+        return { ok: false, message: error.response?.data?.detail?.error || "Error al actualizar la orden" }
+    }
+}
+
+export const enviarOrdenCorreo = async (email: string, pdfBlob: Blob, numOrden: number): Promise<void> => {
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('pdf', pdfBlob, `orden_${numOrden}.pdf`);
+    formData.append('num_orden', numOrden.toString());
+
+    // Ajusta la URL a tu endpoint real de Python
+    const response = await fetch('http://localhost:8000/api/enviar-correo', {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al enviar el correo');
+    }
+};
+
+export async function terminarServicioOrden(id_orden: number, costo_total: number, metodo_pago: string): Promise<{ ok: boolean, message: string }> {
+    try {
+        const response = await apiAxios.put("/ordenes/terminar_servicio", { id_orden, costo_total, metodo_pago })
+        return { ok: true, message: response.data.message }
+    } catch (error: any) {
+        logError("al terminar el servicio", error)
+        return { ok: false, message: error.response?.data?.detail?.error || "Error al terminar el servicio" }
+    }
+}
+
+export async function obtenerFinanzas(id_taller: number, fecha_inicio?: string, fecha_fin?: string): Promise<any> {
+    try {
+        let url = `/finanzas/obtener_ingresos?id_taller=${id_taller}`;
+        if (fecha_inicio && fecha_fin) {
+            url += `&fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`;
+        }
+        const response = await apiAxios.get(url);
+        return response.data;
+    } catch (error: any) {
+        logError("al obtener finanzas", error);
+        throw error;
     }
 }

@@ -7,3 +7,12 @@ class DataCrearEquipoTaller(BaseModel):
     marca_equipo: str
     modelo_equipo: str
     descripcion_equipo: str
+
+class DataEditarEquipoTaller(BaseModel):
+    id_taller: int
+    id_equipo: int
+    id_tipo: int
+    num_serie: str
+    marca_equipo: str
+    modelo_equipo: str
+    descripcion_equipo: str

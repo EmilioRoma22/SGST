@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SidebarTaller from "./Sidebar";
 import Clientes from "./clientes/Clientes";
-import Ordenes from "./ordenes/Ordenes";
 import Finanzas from "./Finanzas";
 import Configuracion from "./Configuracion";
-import Seguimiento from "./Seguimiento";
-import Reportes from "./Reportes";
 import Calendario from "./Calendario";
 import Equipos from "./equipos/Equipos";
 import { useAuth } from "../../contexts/AuthContext";
@@ -14,6 +11,10 @@ import { useTaller } from "../../contexts/TallerContext";
 import { AnimatePresence } from "motion/react";
 import { ModalCerrarSesionTaller } from "./ModalCerrarSesionTaller";
 import { OrdenesLayout } from "./ordenes/OrdenesLayout";
+import Garantias from "./ordenes/Garantias";
+import VerOrden from "./ordenes/VerOrden";
+import { obtenerOrdenesTaller } from "../../services/api";
+import { mostrarToast } from "../../utils/MostrarToast";
 
 export const Dashboard = () => {
     const navigate = useNavigate()
@@ -21,6 +22,10 @@ export const Dashboard = () => {
     const [ModalCerrarSesion, setModalCerrarSesion] = useState(false)
     const [active, setActive] = useState("NADA");
     const { usuario, cerrarSesionUsuario } = useAuth()
+    const [modalOrdenVisible, setModalOrdenVisible] = useState(false)
+    const [idOrdenSeleccionada, setIdOrdenSeleccionada] = useState<number | null>(null)
+    const barcodeBuffer = useRef<string>("")
+    const barcodeTimeout = useRef<number | null>(null)
 
     const renderContent = () => {
         switch (active) {
@@ -32,10 +37,8 @@ export const Dashboard = () => {
                 return <Finanzas />;
             case "Configuración":
                 return <Configuracion />;
-            case "Seguimiento y garantías":
-                return <Seguimiento />;
-            case "Reportes":
-                return <Reportes />;
+            case "Garantías":
+                return <Garantias />;
             case "Calendario":
                 return <Calendario />;
             case "Gestión de equipos":
@@ -64,9 +67,64 @@ export const Dashboard = () => {
         }
     }, [loading_taller, taller, rol_taller])
 
+    useEffect(() => {
+        const handleKeyPress = async (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                if (barcodeBuffer.current.length > 0) {
+                    const numOrden = parseInt(barcodeBuffer.current);
+
+                    if (!isNaN(numOrden) && taller?.id_taller) {
+                        try {
+                            const ordenes = await obtenerOrdenesTaller(taller.id_taller);
+                            const orden = ordenes.find(o => o.id_orden === numOrden);
+
+                            if (orden) {
+                                setIdOrdenSeleccionada(orden.id_orden);
+                                setModalOrdenVisible(true);
+                            } else {
+                                mostrarToast(`No se encontró la orden #${numOrden}`, "error");
+                            }
+                        } catch (error) {
+                            console.error("Error al buscar orden:", error);
+                            mostrarToast("Error al buscar la orden", "error");
+                        }
+                    }
+
+                    barcodeBuffer.current = "";
+                }
+                return;
+            }
+
+            if (/^[0-9]$/.test(event.key)) {
+                barcodeBuffer.current += event.key;
+
+                if (barcodeTimeout.current) {
+                    clearTimeout(barcodeTimeout.current);
+                }
+                barcodeTimeout.current = setTimeout(() => {
+                    barcodeBuffer.current = "";
+                }, 100);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyPress);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyPress);
+            if (barcodeTimeout.current) {
+                clearTimeout(barcodeTimeout.current);
+            }
+        };
+    }, [taller])
+
     return (
         <div className="flex h-screen">
-            <SidebarTaller onSelect={setActive} active={active} onLogout={()=>setModalCerrarSesion(true)} />
+            <SidebarTaller onSelect={setActive} active={active} onLogout={() => setModalCerrarSesion(true)} />
             <main className="flex-1 p-8 overflow-y-auto bg-gray-50">
                 {renderContent()}
             </main>
@@ -74,8 +132,24 @@ export const Dashboard = () => {
             <AnimatePresence>
                 {ModalCerrarSesion && (
                     <ModalCerrarSesionTaller
-                        cerrarModal={() => {setModalCerrarSesion(false)}}
+                        cerrarModal={() => { setModalCerrarSesion(false) }}
                         cerrarSesion={handleLogout}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {modalOrdenVisible && (
+                    <VerOrden
+                        idOrden={idOrdenSeleccionada ?? 0}
+                        cerrarModal={() => {
+                            setIdOrdenSeleccionada(null)
+                            setModalOrdenVisible(false)
+                        }}
+                        alActualizar={() => {
+                            setIdOrdenSeleccionada(null)
+                            setModalOrdenVisible(false)
+                        }}
                     />
                 )}
             </AnimatePresence>

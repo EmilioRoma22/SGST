@@ -3,8 +3,7 @@ export const permisosSidebar = {
     "Clientes",
     "Órdenes de servicio",
     "Gestión de equipos",
-    "Seguimiento y garantías",
-    "Reportes",
+    "Garantías",
     "Calendario",
     "Finanzas",
     "Configuración",
@@ -12,7 +11,6 @@ export const permisosSidebar = {
   TECNICO: [
     "Órdenes de servicio",
     "Gestión de equipos",
-    "Seguimiento y garantías",
     "Calendario",
     "Configuración"
   ],

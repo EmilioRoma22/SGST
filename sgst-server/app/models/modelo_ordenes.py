@@ -17,3 +17,20 @@ class DataCrearOrden(BaseModel):
     fecha_fin_garantia: str
     es_por_garantia: int
     id_orden_origen: int
+
+class DataActualizarOrden(BaseModel):
+    id_orden: int
+    accesorios: str
+    falla: str
+    diagnostico_inicial: str
+    solucion_aplicada: str
+    id_prioridad: int
+    tecnico_asignado: int
+    fecha_estimada_de_fin: str
+    id_estado: int
+    costo_total: float
+
+class DataTerminarOrden(BaseModel):
+    id_orden: int
+    costo_total: float
+    metodo_pago: str

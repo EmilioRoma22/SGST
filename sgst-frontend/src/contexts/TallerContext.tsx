@@ -31,7 +31,7 @@ export const TallerProvider = ({ children }: { children: React.ReactNode }) => {
                 const id_taller = localStorage.getItem("tallerActivo")
                 const rol = localStorage.getItem("rolActivo")
                 if (!id_taller && !rol) return;
-                
+
                 const response = await apiAxios.get(`/talleres/obtener_taller?id_taller=${id_taller}`);
                 setTaller(response.data.taller);
                 setRolTaller(rol)

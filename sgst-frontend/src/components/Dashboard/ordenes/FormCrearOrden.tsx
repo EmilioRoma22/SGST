@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { PlusCircle } from "lucide-react";
-import { type Usuarios, type DatosCrearOrden } from "../../../services/interfaces";
+import { PlusCircle, User, Smartphone, Wrench, Calendar, DollarSign, Shield, FileText, CheckCircle2, ChevronDown, Search } from "lucide-react";
+import { type Usuarios, type DatosCrearOrden, type TipoEquipo } from "../../../services/interfaces";
 import { AnimatePresence } from "motion/react";
 import { SeleccionarCliente } from "./SeleccionarCliente";
 import { ModalCrearCliente } from "../clientes/ModalCrearCliente";
 import { useTaller } from "../../../contexts/TallerContext";
 import { mostrarToast } from "../../../utils/MostrarToast";
 import { Toaster } from "react-hot-toast";
-import { crearOrdenTaller, obtenerUltimoClienteTaller, obtenerUltimoEquipoTaller, obtenerUsuariosTaller } from "../../../services/api";
+import { crearOrdenTaller, obtenerTipoEquipos, obtenerUltimoClienteTaller, obtenerUltimoEquipoTaller, obtenerUsuariosTaller } from "../../../services/api";
 import { ModalCrearEquipo } from "../equipos/ModalCrearEquipo";
 import { SeleccionarEquipo } from "./SeleccionarEquipo";
 
@@ -30,7 +30,9 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
     const [modalCrearEquipoVisible, setModalCrearEquipoVisible] = useState(false)
     const [tecnicos, setTecnicos] = useState<Usuarios[]>([])
     const [loadingTecnicos, setLoadingTecnicos] = useState(false)
+    const [loading, setLoading] = useState(false)
     const { taller } = useTaller()
+    const [tiposEquipo, setTiposEquipo] = useState<TipoEquipo[]>([])
     const [formDatos, setFormDatos] = useState({
         id_taller: taller?.id_taller ?? 0,
         nombre_cliente: "",
@@ -66,10 +68,12 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
         "es_por_garantia",
         "id_orden_origen"
     ];
-    const InputBaseStyle =
-        "w-full border border-gray-300 bg-white rounded-lg px-4 py-2 focus:ring-gray-900 focus:border-gray-900 focus:outline-none transition duration-150";
-    const buttonBaseStyle =
-        "py-2 px-4 bg-gray-900 hover:bg-gray-700 rounded-lg text-white transition duration-150 flex items-center justify-center shrink-0 cursor-pointer"
+
+    const labelStyle = "block text-sm font-medium text-gray-700 mb-1.5";
+    const inputStyle = "w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 focus:bg-white focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 outline-none";
+    const cardStyle = "bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 hover:shadow-md transition-shadow duration-300";
+    const sectionHeaderStyle = "flex items-center gap-3 border-b border-gray-100 pb-4 mb-6";
+    const sectionTitleStyle = "text-lg font-bold text-gray-900";
 
     const sumarMeses = (fecha: Date, meses: number) => {
         const nueva = new Date(fecha);
@@ -85,7 +89,7 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
             : null;
 
     const formatearFechaMX = (fecha: Date) =>
-        fecha.toLocaleDateString("es-MX");
+        fecha.toLocaleDateString("es-MX", { day: 'numeric', month: 'long', year: 'numeric' });
 
     const formatearFechaSQL = (fecha: Date) =>
         fecha.toISOString().split("T")[0];
@@ -106,6 +110,7 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
     const enviarFormulario = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!taller) return;
+        if (loading) return;
 
         const nuevosErrores = {
             id_cliente: ordenData.id_cliente === 0,
@@ -121,13 +126,20 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
             return;
         }
 
-        const respuesta = await crearOrdenTaller(ordenData)
+        setLoading(true)
+        try {
+            const respuesta = await crearOrdenTaller(ordenData)
 
-        if (respuesta.ok) {
-            mostrarToast(respuesta.message, "success");
-            ordenCreada()
-        } else {
-            mostrarToast(respuesta.message, "error")
+            if (respuesta.ok) {
+                mostrarToast(respuesta.message, "success");
+                ordenCreada()
+            } else {
+                mostrarToast(respuesta.message, "error")
+            }
+        } catch (error) {
+            mostrarToast("Error al crear la orden", "error")
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -154,6 +166,16 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
             }
         } catch (error) {
             mostrarToast("Hubo un error al asignar el nuevo equipo", "error")
+        }
+    }
+
+    const obtTiposEquipo = async () => {
+        try {
+            const respuesta = await obtenerTipoEquipos(taller?.id_taller ?? 0);
+
+            setTiposEquipo(respuesta);
+        } catch (error) {
+            console.error("Error al obtener tipos de equipos:", error);
         }
     }
 
@@ -190,6 +212,7 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
 
     useEffect(() => {
         obtTecnicosTaller()
+        obtTiposEquipo()
     }, [])
 
     useEffect(() => {
@@ -204,314 +227,357 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
 
     return (
         <>
-            <div className="space-y-8 w-full max-w-full">
+            <div className="w-full mx-auto">
+                <div className="bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 text-gray-600 font-medium mb-4">
+                    <Calendar size={18} />
+                    {new Date().toLocaleDateString("es-MX", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
                 <form onSubmit={enviarFormulario} className="space-y-8">
-                    <div className="bg-white shadow-xl rounded-xl p-6 space-y-6 border border-gray-200">
-                        <div className="flex justify-between border-b border-gray-300 pb-3">
-                            <h2 className="text-xl font-bold text-gray-800">
-                                Detalles Generales
-                            </h2>
-                            <h2 className="text-xl font-bold text-gray-800">
-                                Fecha: {new Date().toLocaleDateString("es-MX")}
-                            </h2>
+                    <div className={cardStyle}>
+                        <div className={sectionHeaderStyle}>
+                            <div className="bg-gray-100 p-2 rounded-lg">
+                                <User className="text-gray-600" size={24} />
+                            </div>
+                            <h2 className={sectionTitleStyle}>Información del Cliente y Equipo</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <span className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Cliente
-                                </span>
-                                <div className="flex space-x-2">
-                                    <span
-                                        className={`${InputBaseStyle} grow appearance-none cursor-pointer ${errores.id_cliente ? "border-red-500" : ""}`}
-                                        onClick={() => { setModalSeleccionarClienteVisible(true) }}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-2">
+                                <label className={labelStyle}>Cliente</label>
+                                <div className={`relative group cursor-pointer rounded-xl border-2 transition-all duration-200 overflow-hidden ${errores.id_cliente ? "border-red-300 bg-red-50" : "border-gray-100 bg-gray-50 hover:border-gray-300 hover:bg-white"}`}>
+                                    <div
+                                        className="p-4 flex items-center justify-between"
+                                        onClick={() => setModalSeleccionarClienteVisible(true)}
                                     >
-                                        {nombreClienteSeleccionado ? nombreClienteSeleccionado : "Seleccione un cliente"}
-                                    </span>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => { manejarAgregarNuevo("cliente") }}
-                                        className={buttonBaseStyle}
-                                        aria-label={`Agregar nuevo cliente`}
-                                    >
-                                        <PlusCircle size={20} />
-                                    </button>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-full ${nombreClienteSeleccionado ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-400"}`}>
+                                                <User size={20} />
+                                            </div>
+                                            <div>
+                                                <p className={`font-medium ${nombreClienteSeleccionado ? "text-gray-900" : "text-gray-400"}`}>
+                                                    {nombreClienteSeleccionado || "Seleccionar cliente"}
+                                                </p>
+                                                {nombreClienteSeleccionado && <p className="text-xs text-gray-500">Click para cambiar</p>}
+                                            </div>
+                                        </div>
+                                        <Search size={18} className="text-gray-400" />
+                                    </div>
+                                    <div className="border-t border-gray-100 bg-gray-50 p-2 flex justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                manejarAgregarNuevo("cliente");
+                                            }}
+                                            className="text-sm font-medium text-gray-900 hover:text-gray-700 flex items-center gap-1 py-1 px-3 rounded-lg hover:bg-blue-50 transition-colors"
+                                        >
+                                            <PlusCircle size={16} /> Crear nuevo cliente
+                                        </button>
+                                    </div>
                                 </div>
+                                {errores.id_cliente && <p className="text-red-500 text-xs mt-1">Debe seleccionar un cliente</p>}
                             </div>
 
-                            <div>
-                                <label htmlFor="id_equipo" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Equipo
-                                </label>
-                                <div className="flex space-x-2">
-                                    <span
-                                        className={`${InputBaseStyle} grow appearance-none cursor-pointer ${errores.id_equipo ? "border-red-500" : ""}`}
-                                        onClick={() => { setModalSeleccionarEquipoVisible(true) }}
+                            <div className="space-y-2">
+                                <label className={labelStyle}>Equipo</label>
+                                <div className={`relative group cursor-pointer rounded-xl border-2 transition-all duration-200 overflow-hidden ${errores.id_equipo ? "border-red-300 bg-red-50" : "border-gray-100 bg-gray-50 hover:border-gray-300 hover:bg-white"}`}>
+                                    <div
+                                        className="p-4 flex items-center justify-between"
+                                        onClick={() => setModalSeleccionarEquipoVisible(true)}
                                     >
-                                        {nombreEquipoSeleccionado ? nombreEquipoSeleccionado : "Seleccione un equipo"}
-                                    </span>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => { manejarAgregarNuevo("equipo") }}
-                                        className={buttonBaseStyle}
-                                        aria-label={`Agregar nuevo equipo`}
-                                    >
-                                        <PlusCircle size={20} />
-                                    </button>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-full ${nombreEquipoSeleccionado ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-400"}`}>
+                                                <Smartphone size={20} />
+                                            </div>
+                                            <div>
+                                                <p className={`font-medium ${nombreEquipoSeleccionado ? "text-gray-900" : "text-gray-400"}`}>
+                                                    {nombreEquipoSeleccionado || "Seleccionar equipo"}
+                                                </p>
+                                                {nombreEquipoSeleccionado && <p className="text-xs text-gray-500">Click para cambiar</p>}
+                                            </div>
+                                        </div>
+                                        <Search size={18} className="text-gray-400" />
+                                    </div>
+                                    <div className="border-t border-gray-100 bg-gray-50 p-2 flex justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                manejarAgregarNuevo("equipo");
+                                            }}
+                                            className="text-sm font-medium text-gray-900 hover:text-gray-700 flex items-center gap-1 py-1 px-3 rounded-lg hover:bg-blue-50 transition-colors"
+                                        >
+                                            <PlusCircle size={16} /> Crear nuevo equipo
+                                        </button>
+                                    </div>
                                 </div>
+                                {errores.id_equipo && <p className="text-red-500 text-xs mt-1">Debe seleccionar un equipo</p>}
                             </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="accesorios" className="block mb-1 text-sm font-semibold text-gray-700">
-                                Accesorios Entregados
-                            </label>
+                        <div className="mt-6">
+                            <label htmlFor="accesorios" className={labelStyle}>Accesorios Recibidos</label>
                             <textarea
                                 id="accesorios"
                                 name="accesorios"
                                 value={ordenData.accesorios}
                                 onChange={cambiarValor}
-                                placeholder="Ej: Cargador, funda, cable HDMI..."
-                                className={InputBaseStyle}
-                                rows={4}
+                                placeholder="Ej: Cargador original, funda protectora, cable USB..."
+                                className={`${inputStyle} min-h-[80px] resize-y`}
                             />
                         </div>
                     </div>
 
-                    <div className="bg-white shadow-xl rounded-xl p-6 space-y-6 border border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">
-                            Falla y Solución
-                        </h2>
+                    <div className={cardStyle}>
+                        <div className={sectionHeaderStyle}>
+                            <div className="bg-gray-100 p-2 rounded-lg">
+                                <Wrench className="text-gray-600" size={24} />
+                            </div>
+                            <h2 className={sectionTitleStyle}>Detalles del Servicio</h2>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label htmlFor="falla" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Falla reportada por el cliente
-                                </label>
-
+                            <div className="space-y-2">
+                                <label htmlFor="falla" className={labelStyle}>Falla Reportada</label>
                                 <textarea
                                     id="falla"
                                     name="falla"
                                     value={ordenData.falla}
                                     onChange={cambiarValor}
-                                    placeholder="Descripción detallada de la falla..."
-                                    className={InputBaseStyle}
-                                    rows={4}
+                                    placeholder="Descripción detallada del problema reportado por el cliente..."
+                                    className={`${inputStyle} min-h-[120px] resize-y`}
                                 />
                             </div>
 
-                            <div>
-                                <label htmlFor="diagnostico_inicial" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Diagnóstico inicial del técnico
-                                </label>
-
+                            <div className="space-y-2">
+                                <label htmlFor="diagnostico_inicial" className={labelStyle}>Diagnóstico Inicial</label>
                                 <textarea
                                     id="diagnostico_inicial"
                                     name="diagnostico_inicial"
                                     value={ordenData.diagnostico_inicial}
                                     onChange={cambiarValor}
-                                    placeholder="Evaluación inicial..."
-                                    className={InputBaseStyle}
-                                    rows={4}
+                                    placeholder="Evaluación técnica preliminar..."
+                                    className={`${inputStyle} min-h-[120px] resize-y`}
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="solucion_aplicada" className="block mb-1 text-sm font-semibold text-gray-700">
-                                Solución aplicada
-                            </label>
-
+                        <div className="mt-6 space-y-2">
+                            <label htmlFor="solucion_aplicada" className={labelStyle}>Solución Propuesta / Aplicada</label>
                             <textarea
                                 id="solucion_aplicada"
                                 name="solucion_aplicada"
                                 value={ordenData.solucion_aplicada}
                                 onChange={cambiarValor}
-                                placeholder="Acciones correctivas, piezas reemplazadas..."
-                                className={InputBaseStyle}
-                                rows={4}
+                                placeholder="Pasos a seguir o solución ya implementada..."
+                                className={`${inputStyle} min-h-[80px] resize-y`}
                             />
                         </div>
                     </div>
 
-                    <div className="bg-white shadow-xl rounded-xl p-6 space-y-6 border border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">
-                            Seguimiento y Finanzas
-                        </h2>
+                    <div className={cardStyle}>
+                        <div className={sectionHeaderStyle}>
+                            <div className="bg-gray-100 p-2 rounded-lg">
+                                <DollarSign className="text-gray-600" size={24} />
+                            </div>
+                            <h2 className={sectionTitleStyle}>Seguimiento y Costos</h2>
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="id_prioridad" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Prioridad
-                                </label>
-                                <select
-                                    id="id_prioridad"
-                                    name="id_prioridad"
-                                    value={ordenData.id_prioridad}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} appearance-none`}
-                                >
-                                    <option value="1">Baja</option>
-                                    <option value="2">Normal</option>
-                                    <option value="3">Alta</option>
-                                    <option value="4">Urgente</option>
-                                </select>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div className="space-y-2">
+                                <label htmlFor="id_prioridad" className={labelStyle}>Prioridad</label>
+                                <div className="relative">
+                                    <select
+                                        id="id_prioridad"
+                                        name="id_prioridad"
+                                        value={ordenData.id_prioridad}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} appearance-none cursor-pointer`}
+                                    >
+                                        <option value="1">Baja</option>
+                                        <option value="2">Normal</option>
+                                        <option value="3">Alta</option>
+                                        <option value="4">Urgente</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                                </div>
                             </div>
 
-                            <div>
-                                <label htmlFor="id_estado" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Estado de la Orden
-                                </label>
-                                <select
-                                    id="id_estado"
-                                    name="id_estado"
-                                    value={ordenData.id_estado}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} appearance-none`}
-                                >
-                                    <option value="1">Recibido</option>
-                                    <option value="2">En reparación</option>
-                                    <option value="3">Finalizado</option>
-                                    <option value="4">Entregado</option>
-                                    <option value="5">Cancelado</option>
-                                </select>
+                            <div className="space-y-2">
+                                <label htmlFor="id_estado" className={labelStyle}>Estado Inicial</label>
+                                <div className="relative">
+                                    <select
+                                        id="id_estado"
+                                        name="id_estado"
+                                        value={ordenData.id_estado}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} appearance-none cursor-pointer`}
+                                    >
+                                        <option value="1">Recibido</option>
+                                        <option value="2">En reparación</option>
+                                        <option value="3">Finalizado</option>
+                                        <option value="4">Entregado</option>
+                                        <option value="5">Cancelado</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                                </div>
                             </div>
-                            <div>
-                                <label htmlFor="tecnico_asignado" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    asignado
-                                </label>
-                                <select
-                                    id="tecnico_asignado"
-                                    name="tecnico_asignado"
-                                    value={ordenData.tecnico_asignado}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} appearance-none`}
-                                >
-                                    {loadingTecnicos ? (
-                                        <option value="0">Cargando...</option>
-                                    ) : (
-                                        tecnicos.map((tecnico) => (
-                                            <option key={tecnico.id_usuario} value={tecnico.id_usuario}>
-                                                {tecnico.nombre_usuario + " " + tecnico.apellidos_usuario}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
+
+                            <div className="space-y-2">
+                                <label htmlFor="tecnico_asignado" className={labelStyle}>Técnico Asignado</label>
+                                <div className="relative">
+                                    <select
+                                        id="tecnico_asignado"
+                                        name="tecnico_asignado"
+                                        value={ordenData.tecnico_asignado}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} appearance-none cursor-pointer`}
+                                    >
+                                        {loadingTecnicos ? (
+                                            <option value="0">Cargando...</option>
+                                        ) : (
+                                            tecnicos.length === 0 ? (
+                                                <option value="0">No hay técnicos disponibles</option>
+                                            ) : (
+                                                tecnicos.map((tecnico) => (
+                                                    <option key={tecnico.id_usuario} value={tecnico.id_usuario}>
+                                                        {tecnico.nombre_usuario + " " + tecnico.apellidos_usuario}
+                                                    </option>
+                                                ))
+                                            )
+                                        )}
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                                </div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label htmlFor="fecha_estimada_de_fin" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Fecha estimada de fin
-                                </label>
-                                <input
-                                    id="fecha_estimada_de_fin"
-                                    type="date"
-                                    name="fecha_estimada_de_fin"
-                                    value={ordenData.fecha_estimada_de_fin}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} ${errores.fecha_estimada_de_fin ? "border-red-500" : ""}`}
-                                />
+                            <div className="space-y-2">
+                                <label htmlFor="fecha_estimada_de_fin" className={labelStyle}>Fecha Estimada de Entrega</label>
+                                <div className="relative">
+                                    <input
+                                        id="fecha_estimada_de_fin"
+                                        type="date"
+                                        name="fecha_estimada_de_fin"
+                                        value={ordenData.fecha_estimada_de_fin}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} ${errores.fecha_estimada_de_fin ? "border-red-500 ring-1 ring-red-500" : ""}`}
+                                    />
+                                </div>
+                                {errores.fecha_estimada_de_fin && <p className="text-red-500 text-xs">Campo requerido</p>}
                             </div>
 
-                            <div>
-                                <label htmlFor="costo_total" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Costo total (MXN)
-                                </label>
-                                <input
-                                    id="costo_total"
-                                    type="number"
-                                    name="costo_total"
-                                    value={ordenData.costo_total}
-                                    onChange={cambiarValor}
-                                    className={InputBaseStyle}
-                                    placeholder="0"
-                                    step="1"
-                                />
+                            <div className="space-y-2">
+                                <label htmlFor="costo_total" className={labelStyle}>Costo Total Estimado</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                                    <input
+                                        id="costo_total"
+                                        type="number"
+                                        name="costo_total"
+                                        value={ordenData.costo_total}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} pl-8 font-semibold text-lg`}
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        min="0"
+                                    />
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">MXN</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white shadow-xl rounded-xl p-6 space-y-6 border border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">
-                            Opciones de Garantía
-                        </h2>
+                    <div className={cardStyle}>
+                        <div className={sectionHeaderStyle}>
+                            <div className="bg-gray-100 p-2 rounded-lg">
+                                <Shield className="text-gray-600" size={24} />
+                            </div>
+                            <h2 className={sectionTitleStyle}>Garantía</h2>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="es_por_garantia" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Es por garantía (re-ingreso)
-                                </label>
-                                <select
-                                    id="es_por_garantia"
-                                    name="es_por_garantia"
-                                    value={ordenData.es_por_garantia}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} appearance-none`}
-                                >
-                                    <option value="0">No</option>
-                                    <option value="1">Sí</option>
-                                </select>
+                            <div className="space-y-2">
+                                <label htmlFor="es_por_garantia" className={labelStyle}>Tipo de Ingreso</label>
+                                <div className="relative">
+                                    <select
+                                        id="es_por_garantia"
+                                        name="es_por_garantia"
+                                        value={ordenData.es_por_garantia}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} appearance-none cursor-pointer`}
+                                    >
+                                        <option value="0">Servicio Normal</option>
+                                        <option value="1">Reingreso por Garantía</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                                </div>
                             </div>
 
-                            <div>
-                                <label htmlFor="meses_garantia" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Meses de garantía
-                                </label>
-                                <input
-                                    id="meses_garantia"
-                                    type="number"
-                                    name="meses_garantia"
-                                    value={ordenData.meses_garantia}
-                                    onChange={cambiarValor}
-                                    className={`${InputBaseStyle} ${errores.meses_garantia ? "border-red-500" : ""}`}
-                                    min="0"
-                                />
+                            <div className="space-y-2">
+                                <label htmlFor="meses_garantia" className={labelStyle}>Meses de Garantía</label>
+                                <div className="relative">
+                                    <input
+                                        id="meses_garantia"
+                                        type="number"
+                                        name="meses_garantia"
+                                        value={ordenData.meses_garantia}
+                                        onChange={cambiarValor}
+                                        className={`${inputStyle} ${errores.meses_garantia ? "border-red-500 ring-1 ring-red-500" : ""}`}
+                                        min="0"
+                                    />
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">Meses</span>
+                                </div>
                             </div>
 
-                            <div>
-                                <label htmlFor="fecha_fin" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    Fecha del final de la garantía
-                                </label>
-                                {fechaFinGarantiaCalculada ? (
-                                    <p className="text-2xl text-gray-600 mt-1 py-1">
-                                        <strong>{formatearFechaMX(fechaFinGarantiaCalculada)}</strong>
-                                    </p>
-                                ) : (
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Ingrese los meses de la garantía para obtener la fecha fin de la misma
-                                    </p>
-                                )}
+                            <div className="space-y-2">
+                                <label className={labelStyle}>Vencimiento de Garantía</label>
+                                <div className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500">
+                                    {fechaFinGarantiaCalculada ? (
+                                        <span className="font-semibold text-gray-900">{formatearFechaMX(fechaFinGarantiaCalculada)}</span>
+                                    ) : (
+                                        <span className="text-sm italic">Calculado automáticamente</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         {Number(ordenData.es_por_garantia) === 1 && (
-                            <div>
-                                <label htmlFor="id_orden_origen" className="block mb-1 text-sm font-semibold text-gray-700">
-                                    ID de la Orden de Origen (Garantía)
-                                </label>
-                                <input
-                                    id="id_orden_origen"
-                                    type="number"
-                                    name="id_orden_origen"
-                                    value={ordenData.id_orden_origen}
-                                    onChange={cambiarValor}
-                                    placeholder="ID de la orden original"
-                                    className={InputBaseStyle}
-                                />
+                            <div className="mt-6 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <label htmlFor="id_orden_origen" className={labelStyle}>ID de Orden Original</label>
+                                <div className="relative">
+                                    <FileText className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                                    <input
+                                        id="id_orden_origen"
+                                        type="number"
+                                        name="id_orden_origen"
+                                        value={ordenData.id_orden_origen}
+                                        onChange={cambiarValor}
+                                        placeholder="Número de la orden anterior"
+                                        className={`${inputStyle} pl-10`}
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full bg-gray-900 text-white py-3 rounded-xl text-xl font-bold hover:bg-gray-700 transition duration-300 shadow-lg shadow-gray-900/40 transform hover:scale-[1.005]"
-                    >
-                        Crear Orden de Servicio
-                    </button>
+                    <div className="pt-4 pb-12">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`w-full bg-gray-900 text-white py-4 rounded-2xl text-lg font-bold hover:bg-gray-800 transition-all duration-300 shadow-xl shadow-gray-900/20 transform active:scale-[0.99] flex items-center justify-center gap-3 ${loading ? "opacity-70 cursor-not-allowed" : "hover:-translate-y-1"}`}
+                        >
+                            {loading ? (
+                                <>Creando Orden...</>
+                            ) : (
+                                <>
+                                    <CheckCircle2 size={24} />
+                                    Crear Orden de Servicio
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -551,6 +617,10 @@ export const FormCrearOrden = ({ ordenData, setOrdenData, nombreClienteSeleccion
                         }}
                         formEquipo={formEquipo}
                         setFormEquipo={setFormEquipo}
+                        hayNuevoTipo={() => {
+                            obtTiposEquipo()
+                        }}
+                        tiposEquipo={tiposEquipo}
                     />
                 )}
             </AnimatePresence>

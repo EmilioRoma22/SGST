@@ -13,14 +13,14 @@ export default function SidebarTaller({ onSelect, active, onLogout }: {
   active: string,
   onLogout: () => void
 }) {
-  const { taller, rol_taller, loading_taller } = useTaller()  
+  const { taller, rol_taller, loading_taller } = useTaller()
   const [open, setOpen] = useState(true);
 
   const items = [
     { icon: <Users size={20} />, label: "Clientes" },
     { icon: <ClipboardList size={20} />, label: "Órdenes de servicio" },
     { icon: <Wrench size={20} />, label: "Gestión de equipos" },
-    { icon: <RefreshCw size={20} />, label: "Seguimiento y garantías" },
+    { icon: <RefreshCw size={20} />, label: "Garantías" },
     { icon: <BarChart3 size={20} />, label: "Reportes" },
     { icon: <Calendar size={20} />, label: "Calendario" },
     { icon: <DollarSign size={20} />, label: "Finanzas" },
