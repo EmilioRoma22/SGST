@@ -4,8 +4,8 @@ export const licenciaDtoSchema = z.object({
   id_licencia: z.number(),
   nombre_licencia: z.string(),
   descripcion: z.string().nullable(),
-  precio_mensual: z.number(),
-  precio_anual: z.number(),
+  precio_mensual: z.string(),
+  precio_anual: z.string(),
   max_talleres: z.number(),
   max_usuarios: z.number(),
 })
