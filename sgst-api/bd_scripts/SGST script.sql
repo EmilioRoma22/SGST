@@ -75,8 +75,7 @@ CREATE TABLE suscripciones (
   fecha_fin DATE NULL,
   activa TINYINT DEFAULT 1,
   FOREIGN KEY (id_empresa) REFERENCES empresas(id_empresa) ON DELETE CASCADE,
-  FOREIGN KEY (id_licencia) REFERENCES licencias(id_licencia) ON DELETE RESTRICT,
-  UNIQUE (id_empresa, activa)
+  FOREIGN KEY (id_licencia) REFERENCES licencias(id_licencia) ON DELETE RESTRICT
 );
 
 -- =========================
@@ -105,7 +104,7 @@ CREATE TABLE usuarios (
   id_empresa INT NULL,
   nombre_usuario VARCHAR(100) NOT NULL,
   apellidos_usuario VARCHAR(150),
-  correo_usuario VARCHAR(150) UNIQUE,
+  correo_usuario VARCHAR(150),
   telefono_usuario VARCHAR(20),
   hash_password VARCHAR(255) NOT NULL,
   activo TINYINT DEFAULT 1,
@@ -312,6 +311,10 @@ CREATE TABLE refresh_tokens (
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
         ON DELETE CASCADE
 );
+
+-- ============================================
+-- EXTENSIÓN: CAMPOS DE GARANTÍA EN ORDENES (SGST) Y TABLA ORDENES_GARANTIAS
+-- ============================================
 
 ALTER TABLE ordenes
   ADD CONSTRAINT fk_ordenes_origen_sgst

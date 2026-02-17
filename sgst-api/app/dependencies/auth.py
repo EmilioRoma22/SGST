@@ -37,18 +37,23 @@ def obtener_taller_actual(request: Request, db = Depends(obtener_conexion_bd)) -
     
     if not id_taller_actual:
         return None
-    
+
+    try:
+        id_taller_int = int(id_taller_actual)
+    except (ValueError, TypeError):
+        return None
+
     if not token:
         raise TokenException()
-    
+
     payload = decodificar_token(token)
     id_usuario = payload.get("id_usuario")
-    
+
     if not id_usuario:
         raise TokenInvalidoException()
-    
+
     usuarios_talleres_repository = UsuariosTalleresRepository(db)
-    usuario_taller = usuarios_talleres_repository.obtener_rol_por_usuario_y_taller(id_usuario, id_taller_actual)
+    usuario_taller = usuarios_talleres_repository.obtener_rol_por_usuario_y_taller(id_usuario, id_taller_int)
 
     if not usuario_taller:
         raise UsuarioNoPerteneceAlTallerException()

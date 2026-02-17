@@ -137,3 +137,84 @@ class CamposIncompletosException(AppException):
             message="Por favor complete todos los campos requeridos.",
             details={}
         )
+
+class ContrasenaDebilException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="CONTRASENA_DEBIL",
+            message="La contraseña debe tener al menos 8 caracteres, una letra y un número.",
+            details={}
+        )
+
+class FormatoTelefonoInvalidoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="FORMATO_TELEFONO_INVALIDO",
+            message="El formato del teléfono no es válido. Use solo números, espacios, +, - o paréntesis.",
+            details={}
+        )
+
+class FormatoCorreoInvalidoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="FORMATO_CORREO_INVALIDO",
+            message="El formato del correo electrónico no es válido.",
+            details={}
+        )
+
+class NombreTallerRepetidoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="NOMBRE_TALLER_REPETIDO",
+            message="Ya existe un taller con ese nombre en su empresa.",
+            details={}
+        )
+
+class UsuarioSinEmpresaException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            code="USUARIO_SIN_EMPRESA",
+            message="El usuario no tiene una empresa asociada.",
+            details={}
+        )
+
+class UsuarioYaTieneEmpresaException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="USUARIO_YA_TIENE_EMPRESA",
+            message="El usuario ya tiene una empresa asociada.",
+            details={}
+        )
+
+class LicenciaNoEncontradaException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            code="LICENCIA_NO_ENCONTRADA",
+            message="La licencia seleccionada no existe o no está disponible.",
+            details={}
+        )
+
+class EmpresaYaTieneSuscripcionActivaException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="EMPRESA_YA_TIENE_SUSCRIPCION_ACTIVA",
+            message="La empresa ya cuenta con una suscripción activa.",
+            details={}
+        )
+
+class EmpresaSinSuscripcionException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            code="EMPRESA_SIN_SUSCRIPCION",
+            message="La empresa no cuenta con una suscripción activa.",
+            details={}
+        )

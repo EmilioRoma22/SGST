@@ -51,3 +51,10 @@ class UsuariosRepository(BaseRepository):
         self.execute(query, (telefono_usuario,))
         
         return self.cursor.fetchone()["total"] > 0
+
+    def actualizar_id_empresa(self, id_usuario: int, id_empresa: int) -> None:
+        self.update(
+            id_value=id_usuario,
+            id_column="id_usuario",
+            data={"id_empresa": id_empresa}
+        )

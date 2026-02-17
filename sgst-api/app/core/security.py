@@ -9,10 +9,11 @@ SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
 
 def crear_token(usuario: UsuarioDTO) -> str:
-    
     if not SECRET_KEY:
         raise ConfigError()
-    
+    if len(SECRET_KEY) < settings.JWT_SECRET_KEY_MIN_LENGTH:
+        raise ConfigError()
+
     exp = datetime.now(timezone.utc) + timedelta(minutes=10)
 
     payload = {
@@ -39,14 +40,3 @@ def decodificar_token(token: str) -> dict:
 
     except PyJWTError:
         raise TokenInvalidoException()
-
-def decode_token_sin_validar(token: str) -> dict:
-    return jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM],
-        options={
-            "verify_signature": False,
-            "verify_exp": False
-        }
-    )
