@@ -1,0 +1,4 @@
+class Roles:
+    ADMIN = "ADMIN"
+    TECNICO = "TECNICO"
+    RECEPCIONISTA = "RECEPCIONISTA"

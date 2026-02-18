@@ -174,12 +174,12 @@ class NombreTallerRepetidoException(AppException):
             details={}
         )
 
-class UsuarioSinEmpresaException(AppException):
+class NoEsAdministradorException(AppException):
     def __init__(self):
         super().__init__(
             status_code=403,
-            code="USUARIO_SIN_EMPRESA",
-            message="El usuario no tiene una empresa asociada.",
+            code="NO_ES_ADMINISTRADOR",
+            message="Solo los administradores pueden elegir un taller.",
             details={}
         )
 
@@ -216,5 +216,23 @@ class EmpresaSinSuscripcionException(AppException):
             status_code=403,
             code="EMPRESA_SIN_SUSCRIPCION",
             message="La empresa no cuenta con una suscripción activa.",
+            details={}
+        )
+
+class TallerNoEncontradoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            code="TALLER_NO_ENCONTRADO",
+            message="El taller no existe o no está disponible.",
+            details={}
+        )
+
+class TallerNoPerteneceAEmpresaException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            code="TALLER_NO_PERTENECE_A_EMPRESA",
+            message="El taller no pertenece a tu empresa.",
             details={}
         )

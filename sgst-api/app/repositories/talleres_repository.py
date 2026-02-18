@@ -1,6 +1,7 @@
 from typing import List
 from app.repositories.base_repository import BaseRepository
 from app.models.taller import TallerListaDTO
+from app.constants.roles import Roles
 
 class TalleresRepository(BaseRepository):
     table_name = "talleres"
@@ -36,3 +37,10 @@ class TalleresRepository(BaseRepository):
         self.execute(query, (id_taller, id_empresa))
         fila = self.cursor.fetchone()
         return TallerListaDTO(**fila) if fila else None
+
+class TalleresUsuariosRepository(BaseRepository):
+    table_name = "usuarios_talleres"
+
+    def añadir_usuario_admin_al_taller(self, id_usuario: int, id_taller: int) -> None:
+        query = f"""INSERT INTO {self.table_name} (id_usuario, id_taller, rol_taller) VALUES (%s, %s, %s)"""
+        self.execute(query, (id_usuario, id_taller, Roles.ADMIN))

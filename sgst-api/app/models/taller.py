@@ -54,3 +54,7 @@ class TallerListaDTO(BaseModel):
     direccion_taller: str | None = None
     rfc_taller: str | None = None
     ruta_logo: str | None = None
+
+
+class ElegirTallerDTO(BaseModel):
+    id_taller: int

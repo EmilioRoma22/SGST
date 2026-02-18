@@ -77,5 +77,7 @@ async def app_exception_handler(
         }
         response.delete_cookie("access_token", **cookie_params)
         response.delete_cookie("refresh_token", **cookie_params)
+        if request.url.path.endswith("/auth/cerrar_sesion"):
+            response.delete_cookie("id_taller_actual", **cookie_params)
 
     return response
