@@ -22,7 +22,7 @@ class UsuariosRepository(BaseRepository):
         usuario = self.cursor.fetchone()
         return UsuarioDTO(**usuario) if usuario else None
 
-    def obtener_usuario_por_id(self, id_usuario: int) -> UsuarioDTO:
+    def obtener_usuario_por_id(self, id_usuario: str) -> UsuarioDTO | None:
         query = f"""SELECT 
                         id_usuario,
                         id_empresa,
@@ -52,7 +52,7 @@ class UsuariosRepository(BaseRepository):
         
         return self.cursor.fetchone()["total"] > 0
 
-    def actualizar_id_empresa(self, id_usuario: int, id_empresa: int) -> None:
+    def actualizar_id_empresa(self, id_usuario: str, id_empresa: str) -> None:
         self.update(
             id_value=id_usuario,
             id_column="id_usuario",

@@ -10,7 +10,7 @@ from app.core.exceptions import (
     EmpresaYaTieneSuscripcionActivaException,
     EmpresaSinSuscripcionException,
 )
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 class SuscripcionesService:
     def __init__(self, bd):
@@ -23,10 +23,7 @@ class SuscripcionesService:
         id_empresa = usuario.id_empresa
 
         if not id_empresa and id_taller_actual:
-            try:
-                id_empresa = self.talleres_repository.obtener_id_empresa_por_taller(int(id_taller_actual))
-            except (ValueError, TypeError):
-                id_empresa = None
+            id_empresa = self.talleres_repository.obtener_id_empresa_por_taller(id_taller_actual)
 
         if not id_empresa:
             return VerificacionSuscripcionDTO(tiene_suscripcion=False)
@@ -36,44 +33,33 @@ class SuscripcionesService:
         if not suscripcion:
             return VerificacionSuscripcionDTO(tiene_suscripcion=False)
 
-        licencia = self.licencias_repository.obtener_licencia_por_id(suscripcion.id_licencia)
-
         return VerificacionSuscripcionDTO(
             tiene_suscripcion=True,
-            suscripcion=suscripcion,
-            licencia=licencia,
+            id_licencia=suscripcion.id_licencia,
         )
 
     def listar_licencias(self) -> List[LicenciaDTO]:
         return self.licencias_repository.listar_licencias_activas()
 
-    def crear_suscripcion(self, usuario: UsuarioDTO, id_licencia: int) -> SuscripcionDTO:
+    def crear_suscripcion(self, usuario: UsuarioDTO, precio_mensual: str) -> SuscripcionDTO:
         if not usuario.id_empresa:
             raise EmpresaSinSuscripcionException()
 
-        licencia = self.licencias_repository.obtener_licencia_por_id(id_licencia)
-        if not licencia:
+        id_licencia = self.licencias_repository.obtener_id_licencia_por_precio_mensual(precio_mensual)
+        if not id_licencia:
             raise LicenciaNoEncontradaException()
 
         suscripcion_existente = self.suscripciones_repository.obtener_suscripcion_activa_por_empresa(usuario.id_empresa)
         if suscripcion_existente:
             raise EmpresaYaTieneSuscripcionActivaException()
 
-        id_suscripcion = self.suscripciones_repository.create(
+        fecha_fin = date.today() + timedelta(days=365)
+        
+        self.suscripciones_repository.create(
             data={
                 "id_empresa": usuario.id_empresa,
                 "id_licencia": id_licencia,
-                "fecha_fin": datetime.now() + timedelta(days=365),
+                "fecha_fin": fecha_fin,
                 "activa": 1,
             },
-            returning="id_suscripcion"
-        )
-
-        return SuscripcionDTO(
-            id_suscripcion=id_suscripcion,
-            id_empresa=usuario.id_empresa,
-            id_licencia=id_licencia,
-            fecha_inicio=date.today(),
-            fecha_fin=None,
-            activa=True,
         )

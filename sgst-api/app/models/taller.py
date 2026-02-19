@@ -38,16 +38,16 @@ class CrearTallerDTO(BaseModel):
         return v.strip() if v else v
 
 class TallerDTO(BaseModel):
-    id_taller: int
+    id_taller: str
     rol_taller: str
 
 class TallerRolDTO(BaseModel):
     rol_taller: str
-    id_taller: int
+    id_taller: str
 
 class TallerListaDTO(BaseModel):
-    id_taller: int
-    id_empresa: int
+    id_taller: str
+    id_empresa: str
     nombre_taller: str
     telefono_taller: str | None = None
     correo_taller: str | None = None
@@ -57,4 +57,4 @@ class TallerListaDTO(BaseModel):
 
 
 class ElegirTallerDTO(BaseModel):
-    id_taller: int
+    id_taller: str

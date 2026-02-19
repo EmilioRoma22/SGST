@@ -96,7 +96,7 @@ async def login(request: Request, credenciales: LoginDTO, bd=Depends(obtener_con
     return response
 
 @router.post("/cerrar_sesion", status_code=status.HTTP_200_OK)
-async def cerrar_sesion(request: Request, usuario: UsuarioDTO = Depends(obtener_usuario_actual)):
+async def cerrar_sesion(request: Request, usuario: UsuarioDTO = Depends(obtener_usuario_actual), bd=Depends(obtener_conexion_bd)):
     response = JSONResponse(
         content={"message": "Sesión cerrada correctamente"},
         status_code=status.HTTP_200_OK,
@@ -108,6 +108,9 @@ async def cerrar_sesion(request: Request, usuario: UsuarioDTO = Depends(obtener_
         response.delete_cookie("access_token", **cookie_params)
         response.delete_cookie("refresh_token", **cookie_params)
         
+        tokens_service = TokensService(bd)
+        tokens_service.revocar_refresh_token(request.cookies.get("refresh_token"))
+        
     id_taller_cookie = request.cookies.get("id_taller_actual")
     # Si el usuario es administrador y no tiene un taller activo, 
     # entonces es un logout desde dahsboard/talleres, por ende, se cierra sesión por completo.
@@ -117,6 +120,8 @@ async def cerrar_sesion(request: Request, usuario: UsuarioDTO = Depends(obtener_
         response.delete_cookie("access_token", **cookie_params)
         response.delete_cookie("refresh_token", **cookie_params)
         
+        tokens_service = TokensService(bd)
+        tokens_service.revocar_refresh_token(request.cookies.get("refresh_token"))
     response.delete_cookie("id_taller_actual", **cookie_params)
     return response
 

@@ -7,6 +7,7 @@ from app.core.security import decodificar_token
 from app.repositories.usuarios_talleres_repository import UsuariosTalleresRepository
 from app.models.taller import TallerRolDTO
 import bcrypt
+import uuid
 
 class AuthService:
     def __init__(self, bd):
@@ -75,8 +76,10 @@ class AuthService:
     def registro(self, datos: RegistroDTO) -> None:
         self.verificar_datos_registro(datos)
         hash_password = bcrypt.hashpw(datos.password_usuario.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
+        id_usuario = str(uuid.uuid4())
+
         self.usuarios_repository.create(data={
+            "id_usuario": id_usuario,
             "nombre_usuario": datos.nombre_usuario,
             "apellidos_usuario": datos.apellidos_usuario,
             "correo_usuario": datos.correo_usuario,

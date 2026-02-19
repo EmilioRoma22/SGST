@@ -34,7 +34,7 @@ class LoginResponseDTO(BaseModel):
 
 class RefreshTokenBdDTO(BaseModel):
     id_token: int
-    id_usuario: int
+    id_usuario: str
     expira_en: datetime
 
 class RegistroDTO(BaseModel):

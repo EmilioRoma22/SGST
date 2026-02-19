@@ -62,7 +62,7 @@ class TokenException(AppException):
         super().__init__(
             status_code=401,
             code="TOKEN_ERROR",
-            message="No se ha encontrado un token, por favor inicie sesión nuevamente.",
+            message="Se necesita un token para continuar, inicie sesión.",
             details={}
         )
 
@@ -234,5 +234,50 @@ class TallerNoPerteneceAEmpresaException(AppException):
             status_code=403,
             code="TALLER_NO_PERTENECE_A_EMPRESA",
             message="El taller no pertenece a tu empresa.",
+            details={}
+        )
+
+class EmpresaYaTieneMaxTalleresException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="EMPRESA_YA_TIENE_MAX_TALLERES",
+            message="La empresa ya tiene el máximo de talleres permitidos en su suscripción activa.",
+            details={}
+        )
+
+class ClienteNoEncontradoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            code="CLIENTE_NO_ENCONTRADO",
+            message="El cliente no existe o no pertenece a este taller.",
+            details={}
+        )
+
+class ClienteDuplicadoException(AppException):
+    def __init__(self, campo: str = "correo o teléfono"):
+        super().__init__(
+            status_code=400,
+            code="CLIENTE_DUPLICADO",
+            message=f"Ya existe un cliente con ese {campo} en este taller.",
+            details={"campo": campo}
+        )
+
+class NoEsAdministradorDelTallerException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            code="NO_ES_ADMINISTRADOR_DEL_TALLER",
+            message="Solo los administradores del taller pueden realizar esta acción.",
+            details={}
+        )
+
+class TallerNoEspecificadoException(AppException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            code="TALLER_NO_ESPECIFICADO",
+            message="No se ha especificado un taller. Por favor, seleccione un taller primero.",
             details={}
         )

@@ -5,6 +5,7 @@ from app.repositories.empresas_repository import EmpresasRepository
 from app.repositories.usuarios_repository import UsuariosRepository
 from app.services.tokens_service import TokensService
 from app.core.exceptions import UsuarioYaTieneEmpresaException
+import uuid
 
 class EmpresasService:
     def __init__(self, bd):
@@ -17,8 +18,10 @@ class EmpresasService:
         if usuario.id_empresa:
             raise UsuarioYaTieneEmpresaException()
 
-        id_empresa = self.empresas_repository.create(
+        id_empresa = str(uuid.uuid4())
+        self.empresas_repository.create(
             data={
+                "id_empresa": id_empresa,
                 "id_creador": usuario.id_usuario,
                 "nombre_empresa": datos.nombre_empresa,
                 "rfc_empresa": datos.rfc_empresa,
@@ -26,8 +29,7 @@ class EmpresasService:
                 "correo_empresa": datos.correo_empresa,
                 "direccion_empresa": datos.direccion_empresa,
                 "activo": 1,
-            },
-            returning="id_empresa"
+            }
         )
 
         self.usuarios_repository.actualizar_id_empresa(usuario.id_usuario, id_empresa)

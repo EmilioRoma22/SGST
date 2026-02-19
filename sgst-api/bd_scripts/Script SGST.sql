@@ -31,26 +31,10 @@ INSERT INTO cat_estados (clave, descripcion, orden_int)
 VALUES ('recibido','Recibido',10),('en_reparacion','En reparación',20),('finalizado','Finalizado',30),('listo_para_entregar','Listo para entregar',40),('cancelado','Cancelado',50);
 
 -- =========================
--- EMPRESAS
--- =========================
-CREATE TABLE empresas (
-  id_empresa INT AUTO_INCREMENT PRIMARY KEY,
-  id_creador INT NOT NULL,
-  nombre_empresa VARCHAR(150) NOT NULL,
-  rfc_empresa VARCHAR(20),
-  telefono_empresa VARCHAR(20),
-  correo_empresa VARCHAR(150),
-  direccion_empresa VARCHAR(255),
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  activo TINYINT DEFAULT 1,
-  UNIQUE (nombre_empresa)
-) ENGINE=InnoDB;
-
--- =========================
--- LICENCIAS
+-- LICENCIAS (UUIDs fijos para referenciar desde frontend)
 -- =========================
 CREATE TABLE licencias (
-  id_licencia INT AUTO_INCREMENT PRIMARY KEY,
+  id_licencia CHAR(36) PRIMARY KEY,
   nombre_licencia VARCHAR(100) NOT NULL UNIQUE,
   descripcion VARCHAR(255),
   precio_mensual DECIMAL(10,2) NOT NULL,
@@ -60,32 +44,67 @@ CREATE TABLE licencias (
   activo TINYINT DEFAULT 1
 ) ENGINE=InnoDB;
 
-INSERT INTO licencias (nombre_licencia, descripcion, precio_mensual, precio_anual, max_talleres, max_usuarios)
+INSERT INTO licencias (id_licencia, nombre_licencia, descripcion, precio_mensual, precio_anual, max_talleres, max_usuarios)
 VALUES
-('Normal', 'Hasta 1 taller y 5 usuarios', 499, 4999, 1, 5),
-('Pro', 'Hasta 2 talleres y 10 usuarios por taller', 899, 8999, 2, 10),
-('Empresarial', 'Ilimitado', 1499, 14999, 0, 0);
+('96e832d8-928d-4bb3-ab05-fbbeadf6b881', 'Normal', 'Hasta 1 taller y 5 usuarios', 499, 4999, 1, 5),
+('92931b2d-cb2e-4b68-a854-06434468683a', 'Pro', 'Hasta 2 talleres y 10 usuarios por taller', 899, 8999, 2, 10),
+('7512bf7a-729b-4e93-8fed-64bdf95d8e74', 'Empresarial', 'Ilimitado', 1499, 14999, 0, 0);
+
+-- =========================
+-- USUARIOS Y EMPRESAS (dependencia circular: se crean con FK desactivada)
+-- =========================
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE usuarios (
+  id_usuario CHAR(36) PRIMARY KEY,
+  id_empresa CHAR(36) NULL,
+  nombre_usuario VARCHAR(100) NOT NULL,
+  apellidos_usuario VARCHAR(150),
+  correo_usuario VARCHAR(150),
+  telefono_usuario VARCHAR(20),
+  hash_password VARCHAR(255) NOT NULL,
+  activo TINYINT DEFAULT 1,
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ultima_sesion TIMESTAMP NULL,
+  CONSTRAINT fk_usuarios_empresa FOREIGN KEY (id_empresa) REFERENCES empresas(id_empresa) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE empresas (
+  id_empresa CHAR(36) PRIMARY KEY,
+  id_creador CHAR(36) NOT NULL,
+  nombre_empresa VARCHAR(150) NOT NULL,
+  rfc_empresa VARCHAR(20),
+  telefono_empresa VARCHAR(20),
+  correo_empresa VARCHAR(150),
+  direccion_empresa VARCHAR(255),
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  activo TINYINT DEFAULT 1,
+  UNIQUE (nombre_empresa),
+  CONSTRAINT fk_empresas_creador FOREIGN KEY (id_creador) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================
 -- SUSCRIPCIONES
 -- =========================
 CREATE TABLE suscripciones (
   id_suscripcion INT AUTO_INCREMENT PRIMARY KEY,
-  id_empresa INT NOT NULL,
-  id_licencia INT NOT NULL,
+  id_empresa CHAR(36) NOT NULL,
+  id_licencia CHAR(36) NOT NULL,
   fecha_inicio DATE NOT NULL DEFAULT (CURRENT_DATE),
   fecha_fin DATE NULL,
   activa TINYINT DEFAULT 1,
   FOREIGN KEY (id_empresa) REFERENCES empresas(id_empresa) ON DELETE CASCADE,
   FOREIGN KEY (id_licencia) REFERENCES licencias(id_licencia) ON DELETE RESTRICT
-);
+) ENGINE=InnoDB;
 
 -- =========================
--- TALLERES
+-- TALLERES (PK UUID)
 -- =========================
 CREATE TABLE talleres (
-  id_taller INT AUTO_INCREMENT PRIMARY KEY,
-  id_empresa INT NOT NULL,
+  id_taller CHAR(36) PRIMARY KEY,
+  id_empresa CHAR(36) NOT NULL,
   nombre_taller VARCHAR(150) NOT NULL,
   telefono_taller VARCHAR(20),
   correo_taller VARCHAR(150),
@@ -96,46 +115,27 @@ CREATE TABLE talleres (
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (id_empresa, nombre_taller),
   FOREIGN KEY (id_empresa) REFERENCES empresas(id_empresa) ON DELETE CASCADE
-);
-
--- =========================
--- USUARIOS
--- =========================
-CREATE TABLE usuarios (
-  id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-  id_empresa INT NULL,
-  nombre_usuario VARCHAR(100) NOT NULL,
-  apellidos_usuario VARCHAR(150),
-  correo_usuario VARCHAR(150),
-  telefono_usuario VARCHAR(20),
-  hash_password VARCHAR(255) NOT NULL,
-  activo TINYINT DEFAULT 1,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  ultima_sesion TIMESTAMP NULL,
-  FOREIGN KEY (id_empresa) REFERENCES empresas(id_empresa) ON DELETE CASCADE
-);
-
-ALTER TABLE empresas ADD FOREIGN KEY (id_creador) REFERENCES usuarios(id_usuario);
+) ENGINE=InnoDB;
 
 -- Tabla para administrar permisos especiales por taller
 CREATE TABLE usuarios_talleres (
   id_usuario_taller INT AUTO_INCREMENT PRIMARY KEY,
-  id_usuario INT NOT NULL,
-  id_taller INT NOT NULL,
+  id_usuario CHAR(36) NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   rol_taller ENUM('ADMIN', 'TECNICO', 'RECEPCIONISTA') NOT NULL,
   activo TINYINT DEFAULT 1,
   fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE CASCADE,
   UNIQUE (id_usuario, id_taller)
-);
+) ENGINE=InnoDB;
 
 -- =========================
 -- CLIENTES
 -- =========================
 CREATE TABLE clientes (
   id_cliente INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   nombre_cliente VARCHAR(100) NOT NULL,
   apellidos_cliente VARCHAR(100) NOT NULL,
   correo_cliente VARCHAR(150),
@@ -155,7 +155,7 @@ CREATE TABLE clientes (
 -- =========================
 CREATE TABLE tipo_equipos (
   id_tipo INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   nombre_tipo VARCHAR(100) NOT NULL,
   activo TINYINT DEFAULT 1,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -168,7 +168,7 @@ CREATE TABLE tipo_equipos (
 -- =========================
 CREATE TABLE equipos (
   id_equipo INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   id_tipo INT NOT NULL,
   num_serie VARCHAR(100) NOT NULL,
   marca_equipo VARCHAR(100),
@@ -188,7 +188,7 @@ CREATE TABLE equipos (
 -- =========================
 CREATE TABLE ordenes (
   id_orden INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   num_orden INT NOT NULL,
   id_cliente INT NOT NULL,
   id_equipo INT NOT NULL,
@@ -197,7 +197,7 @@ CREATE TABLE ordenes (
   diagnostico_inicial TEXT,
   solucion_aplicada TEXT,
   id_prioridad TINYINT UNSIGNED NOT NULL DEFAULT 2, -- referencia cat_prioridades
-  tecnico_asignado INT NULL,
+  tecnico_asignado CHAR(36) NULL,
   fecha_estimada_de_fin DATE NULL,
   fecha_entrega DATE NULL, -- AL MOMENTO DE YA ENTREGAR LA ORDEN
   id_estado TINYINT UNSIGNED NOT NULL DEFAULT 1, -- referencia cat_estados
@@ -208,8 +208,8 @@ CREATE TABLE ordenes (
   id_orden_origen INT NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   ultima_actualizacion TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-  creado_por INT NULL, -- SE COLOCA EN EL ENDPOINT
-  cerrado_por INT NULL, -- SE COLOCA EN EL ENDPOINT
+  creado_por CHAR(36) NULL, -- SE COLOCA EN EL ENDPOINT
+  cerrado_por CHAR(36) NULL, -- SE COLOCA EN EL ENDPOINT
   visible TINYINT DEFAULT 1,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
   FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente) ON DELETE RESTRICT,
@@ -235,14 +235,14 @@ CREATE TABLE ordenes (
 CREATE TABLE pagos (
   id_pago BIGINT AUTO_INCREMENT PRIMARY KEY,
   id_orden INT NOT NULL,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   tipo_pago VARCHAR(50) NOT NULL, -- flexible: 'anticipo','abono','liquidacion','otros' u otros
   monto DECIMAL(12,2) NOT NULL,
   metodo VARCHAR(100),
   referencia VARCHAR(150),
   comentario_pago TEXT,
   fecha_pago TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  creado_por INT NULL,
+  creado_por CHAR(36) NULL,
   anulado TINYINT DEFAULT 0,
   motivo_anulacion TEXT NULL,
   fecha_anulacion TIMESTAMP NULL,
@@ -261,7 +261,7 @@ CREATE TABLE orden_historial (
   id_orden INT NOT NULL,
   accion VARCHAR(150) NOT NULL,
   detalle TEXT,
-  id_usuario INT NULL,
+  id_usuario CHAR(36) NULL,
   fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_orden) REFERENCES ordenes(id_orden) ON DELETE CASCADE,
   FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
@@ -278,7 +278,7 @@ CREATE TABLE archivos (
   ruta_archivo VARCHAR(255) NOT NULL,
   tipo_archivo VARCHAR(50),
   descripcion TEXT,
-  subido_por INT NULL,
+  subido_por CHAR(36) NULL,
   fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   activo TINYINT DEFAULT 1,
   FOREIGN KEY (id_orden) REFERENCES ordenes(id_orden) ON DELETE RESTRICT,
@@ -292,14 +292,14 @@ CREATE TABLE archivos (
 -- =========================
 CREATE TABLE notificaciones (
 	id_notificacion INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT,
+    id_usuario CHAR(36) NULL,
     mensaje TEXT,
     leido TINYINT DEFAULT 0,
     direccion_url VARCHAR(255),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_leido TIMESTAMP NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- =========================
 -- TOKENS
@@ -307,14 +307,14 @@ CREATE TABLE notificaciones (
 
 CREATE TABLE refresh_tokens (
     id_token INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
+    id_usuario CHAR(36) NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
     expira_en DATETIME NOT NULL,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     valido TINYINT NOT NULL DEFAULT 1,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
         ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- ============================================
 -- EXTENSIÓN: CAMPOS DE GARANTÍA EN ORDENES (SGST) Y TABLA ORDENES_GARANTIAS
@@ -385,7 +385,7 @@ VALUES
 
 CREATE TABLE proveedores (
   id_proveedor INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   nombre_proveedor VARCHAR(150) NOT NULL,
   contacto VARCHAR(150),
   telefono VARCHAR(20),
@@ -404,7 +404,7 @@ CREATE TABLE proveedores (
 
 CREATE TABLE refacciones (
   id_refaccion INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   id_categoria INT NOT NULL,
   nombre_refaccion VARCHAR(150) NOT NULL,
   codigo_barras VARCHAR(100),
@@ -428,7 +428,7 @@ CREATE TABLE refacciones (
 
 CREATE TABLE productos_venta (
   id_producto INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   id_categoria INT NOT NULL,
   nombre_producto VARCHAR(150) NOT NULL,
   codigo_barras VARCHAR(100),
@@ -453,15 +453,15 @@ CREATE TABLE productos_venta (
 
 CREATE TABLE compras (
   id_compra INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   num_factura VARCHAR(100),
   id_proveedor INT NULL,
   proveedor VARCHAR(150),
   fecha_compra DATE NOT NULL DEFAULT (CURRENT_DATE),
   total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   estado ENUM('pendiente', 'confirmada', 'anulada') NOT NULL DEFAULT 'pendiente',
-  creado_por INT NULL,
-  confirmado_por INT NULL,
+  creado_por CHAR(36) NULL,
+  confirmado_por CHAR(36) NULL,
   fecha_confirmacion TIMESTAMP NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
@@ -493,14 +493,14 @@ CREATE TABLE compras_detalle (
 
 CREATE TABLE ventas (
   id_venta INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   num_venta INT NOT NULL,
   id_cliente INT NULL,
   fecha_venta DATE NOT NULL DEFAULT (CURRENT_DATE),
   total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   id_metodo_pago INT NULL,
   metodo_pago VARCHAR(50),
-  creado_por INT NULL,
+  creado_por CHAR(36) NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
   FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente) ON DELETE SET NULL,
@@ -550,7 +550,7 @@ CREATE TABLE ordenes_imagenes_recepcion (
   id_orden INT NOT NULL,
   ruta_imagen VARCHAR(255) NOT NULL,
   orden_imagen TINYINT NOT NULL CHECK (orden_imagen BETWEEN 1 AND 3),
-  subido_por INT NULL,
+  subido_por CHAR(36) NULL,
   fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_orden) REFERENCES ordenes(id_orden) ON DELETE CASCADE,
   FOREIGN KEY (subido_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
@@ -564,7 +564,7 @@ CREATE TABLE ordenes_imagenes_recepcion (
 
 CREATE TABLE finanzas_movimientos (
   id_movimiento BIGINT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   tipo_movimiento ENUM('ingreso', 'egreso') NOT NULL,
   categoria ENUM('compra', 'venta', 'pago_orden', 'gasto', 'ingreso_otro') NOT NULL,
   concepto VARCHAR(255) NOT NULL,
@@ -572,7 +572,7 @@ CREATE TABLE finanzas_movimientos (
   fecha_movimiento DATE NOT NULL DEFAULT (CURRENT_DATE),
   id_relacionado INT NULL,
   tipo_relacionado VARCHAR(50),
-  creado_por INT NULL,
+  creado_por CHAR(36) NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
   FOREIGN KEY (creado_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
@@ -588,13 +588,13 @@ CREATE TABLE finanzas_movimientos (
 
 CREATE TABLE gastos (
   id_gasto INT AUTO_INCREMENT PRIMARY KEY,
-  id_taller INT NOT NULL,
+  id_taller CHAR(36) NOT NULL,
   categoria VARCHAR(100) NOT NULL,
   concepto VARCHAR(255) NOT NULL,
   monto DECIMAL(12,2) NOT NULL,
   fecha_gasto DATE NOT NULL DEFAULT (CURRENT_DATE),
   ruta_comprobante VARCHAR(255),
-  creado_por INT NULL,
+  creado_por CHAR(36) NULL,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_taller) REFERENCES talleres(id_taller) ON DELETE RESTRICT,
   FOREIGN KEY (creado_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
@@ -611,7 +611,7 @@ CREATE TABLE refacciones_precios_historial (
   precio_anterior DECIMAL(12,2) NOT NULL,
   precio_nuevo DECIMAL(12,2) NOT NULL,
   fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  cambiado_por INT NULL,
+  cambiado_por CHAR(36) NULL,
   FOREIGN KEY (id_refaccion) REFERENCES refacciones(id_refaccion) ON DELETE CASCADE,
   FOREIGN KEY (cambiado_por) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
   INDEX idx_refacciones_precios_historial_refaccion (id_refaccion),

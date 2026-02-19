@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
 class UsuarioDTO(BaseModel):
-    id_usuario: int
-    id_empresa: int | None
+    id_usuario: str
+    id_empresa: str | None
     nombre_usuario: str
     apellidos_usuario: str
     correo_usuario: str

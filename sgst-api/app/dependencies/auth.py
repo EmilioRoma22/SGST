@@ -1,5 +1,5 @@
 from fastapi import Depends, Request
-from app.core.exceptions import UsuarioNoEncontradoException, UsuarioNoPerteneceAlTallerException
+from app.core.exceptions import UsuarioNoEncontradoException, UsuarioNoPerteneceAlTallerException, NoEsAdministradorDelTallerException, TallerNoEspecificadoException
 from app.core.security import decodificar_token
 from app.dependencies.database import obtener_conexion_bd
 from app.models.usuarios import UsuarioDTO
@@ -7,6 +7,7 @@ from app.core.exceptions import TokenInvalidoException, TokenException
 from app.repositories.usuarios_repository import UsuariosRepository
 from app.models.taller import TallerDTO
 from app.repositories.usuarios_talleres_repository import UsuariosTalleresRepository
+from app.constants.roles import Roles
 
 def obtener_usuario_actual(request: Request, db = Depends(obtener_conexion_bd)) -> UsuarioDTO:
     token = request.cookies.get("access_token")
@@ -38,11 +39,6 @@ def obtener_taller_actual(request: Request, db = Depends(obtener_conexion_bd)) -
     if not id_taller_actual:
         return None
 
-    try:
-        id_taller_int = int(id_taller_actual)
-    except (ValueError, TypeError):
-        return None
-
     if not token:
         raise TokenException()
 
@@ -53,9 +49,32 @@ def obtener_taller_actual(request: Request, db = Depends(obtener_conexion_bd)) -
         raise TokenInvalidoException()
 
     usuarios_talleres_repository = UsuariosTalleresRepository(db)
-    usuario_taller = usuarios_talleres_repository.obtener_rol_por_usuario_y_taller(id_usuario, id_taller_int)
+    usuario_taller = usuarios_talleres_repository.obtener_rol_por_usuario_y_taller(id_usuario, id_taller_actual)
 
     if not usuario_taller:
         raise UsuarioNoPerteneceAlTallerException()
     
     return TallerDTO(id_taller=usuario_taller.id_taller, rol_taller=usuario_taller.rol_taller)
+
+def verificar_es_admin_taller(
+    request: Request,
+    db = Depends(obtener_conexion_bd)
+) -> TallerDTO:
+    """
+    Verifica que el usuario actual es administrador del taller actual.
+    
+    :param request: Request de FastAPI
+    :param db: Conexión a la base de datos
+    :return: TallerDTO con información del taller y rol
+    :raises TallerNoEspecificadoException: Si no se ha especificado un taller
+    :raises NoEsAdministradorDelTallerException: Si el usuario no es administrador del taller
+    """
+    taller_actual = obtener_taller_actual(request, db)
+    
+    if not taller_actual:
+        raise TallerNoEspecificadoException()
+    
+    if taller_actual.rol_taller != Roles.ADMIN:
+        raise NoEsAdministradorDelTallerException()
+    
+    return taller_actual

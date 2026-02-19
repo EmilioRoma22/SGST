@@ -39,9 +39,6 @@ async def crear_suscripcion(
     bd = Depends(obtener_conexion_bd),
 ):
     suscripciones_service = SuscripcionesService(bd)
-    suscripcion = suscripciones_service.crear_suscripcion(usuario, datos.id_licencia)
+    suscripcion = suscripciones_service.crear_suscripcion(usuario, datos.precio_mensual)
 
-    return {
-        "message": "Se ha activado tu suscripción correctamente, ¡Te agradecemos por confiar en nosotros! Disfruta de SGST.",
-        "suscripcion": suscripcion,
-    }
+    return {"message": "Se ha activado tu suscripción correctamente, ¡Te agradecemos por confiar en nosotros! Disfruta de SGST."}

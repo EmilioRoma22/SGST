@@ -21,8 +21,8 @@ class CrearEmpresaDTO(BaseModel):
         return v.strip()
 
 class EmpresaDTO(BaseModel):
-    id_empresa: int
-    id_creador: int
+    id_empresa: str
+    id_creador: str
     nombre_empresa: str
     rfc_empresa: str | None = None
     telefono_empresa: str | None = None
