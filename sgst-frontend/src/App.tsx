@@ -1,4 +1,6 @@
-import { Navigate, Route, Routes } from "react-router-dom"
+import { useEffect } from "react"
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom"
+import { navigationRef } from "./navigationRef"
 import LayoutLogin from "./components/layouts/LayoutLogin"
 import LayoutPrivado from "./components/layouts/LayoutPrivado"
 import RutaProtegida from "./components/guards/RutaProtegida"
@@ -10,8 +12,18 @@ import PaginaSuscripciones from "./modules/suscripciones/components/PaginaSuscri
 import PaginaDashboard from "./modules/dashboard/components/PaginaDashboard"
 import PaginaDashboardTalleres from "./modules/dashboard/components/PaginaDashboardTalleres"
 import PaginaClientes from "./modules/clientes/components/PaginaClientes"
+import PaginaEquipos from "./modules/equipos/components/PaginaEquipos"
 
 function App() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    navigationRef.current = (to, options) => navigate(to, options)
+    return () => {
+      navigationRef.current = null
+    }
+  }, [navigate])
+
   return (
     <Routes>
       <Route element={<RutaPublica />}>
@@ -29,6 +41,7 @@ function App() {
         <Route element={<LayoutPrivado />}>
           <Route path="/dashboard" element={<PaginaDashboard />} />
           <Route path="/dashboard/clientes" element={<PaginaClientes />} />
+          <Route path="/dashboard/equipos" element={<PaginaEquipos />} />
         </Route>
       </Route>
 

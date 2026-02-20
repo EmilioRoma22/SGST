@@ -186,10 +186,7 @@ function PaginaClientes() {
 
                 <ModalVerEditarCliente
                     open={modalEditarAbierto}
-                    onClose={() => {
-                        setModalEditarAbierto(false)
-                        setClienteSeleccionado(null)
-                    }}
+                    onClose={() => setModalEditarAbierto(false)}
                     onSubmit={handleActualizarCliente}
                     cliente={clienteDetalle || clienteSeleccionado}
                     deshabilitado={actualizarCliente.isPending}
@@ -197,10 +194,7 @@ function PaginaClientes() {
 
                 <ModalEliminarCliente
                     open={modalEliminarAbierto}
-                    onClose={() => {
-                        setModalEliminarAbierto(false)
-                        setClienteSeleccionado(null)
-                    }}
+                    onClose={() => setModalEliminarAbierto(false)}
                     onConfirmar={handleEliminarCliente}
                     cliente={clienteSeleccionado}
                     deshabilitado={eliminarCliente.isPending}

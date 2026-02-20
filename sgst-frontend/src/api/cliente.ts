@@ -6,6 +6,9 @@
  * el backend la obtiene del JWT y la BD. Enviar ids del cliente debilita la seguridad.
  */
 import axios from "axios"
+import { navigationRef } from "../navigationRef"
+import { useTallerStore } from "../modules/auth/stores/taller.store"
+import { mostrarToast } from "../helpers/toast"
 
 declare module "axios" {
   interface InternalAxiosRequestConfig {
@@ -25,6 +28,11 @@ const RUTAS_SIN_REFRESH = [
 
 const RUTAS_VERIFICACION_SESION = ["/auth/me", "/auth/me/taller"]
 
+const CODIGOS_SESION_TALLER_FINALIZADA = [
+  "TALLER_NO_ESPECIFICADO",
+  "NO_HAY_TALLER_ACTIVO",
+]
+
 const esRutaVerificacion = (url: string | undefined) =>
   RUTAS_VERIFICACION_SESION.some((ruta) => url?.includes(ruta))
 
@@ -39,6 +47,18 @@ cliente.interceptors.response.use(
   (respuesta) => respuesta,
   async (error) => {
     const configOriginal = error.config
+    const codigoError = error.response?.data?.error?.code
+
+    if (CODIGOS_SESION_TALLER_FINALIZADA.includes(codigoError)) {
+      useTallerStore.getState().clearTaller()
+      mostrarToast.warning("Sesión de taller finalizada. Seleccione un taller.")
+      if (navigationRef.current) {
+        navigationRef.current("/dashboard/talleres", { replace: true })
+      } else {
+        window.location.replace("/dashboard/talleres")
+      }
+      return Promise.reject(error)
+    }
 
     const esRutaExcluida = RUTAS_SIN_REFRESH.some((ruta) =>
       configOriginal?.url?.includes(ruta)
